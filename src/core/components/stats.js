@@ -1,7 +1,7 @@
 'use strict'
 
 const promisify = require('promisify-es6')
-const Big = require('big.js')
+const Big = require('bignumber.js')
 const Pushable = require('pull-pushable')
 const human = require('human-to-milliseconds')
 const toStream = require('pull-stream-to-stream')
@@ -12,11 +12,11 @@ function bandwidthStats (self, opts) {
     let stats
 
     if (opts.peer) {
-      stats = self._libp2pNode.stats.forPeer(opts.peer)
+      stats = self.libp2p.stats.forPeer(opts.peer)
     } else if (opts.proto) {
-      stats = self._libp2pNode.stats.forProtocol(opts.proto)
+      stats = self.libp2p.stats.forProtocol(opts.proto)
     } else {
-      stats = self._libp2pNode.stats.global
+      stats = self.libp2p.stats.global
     }
 
     if (!stats) {
@@ -42,24 +42,33 @@ module.exports = function stats (self) {
   const _bwPullStream = (opts) => {
     opts = opts || {}
     let interval = null
-    let stream = Pushable(true, () => {
+    const stream = Pushable(true, () => {
       if (interval) {
         clearInterval(interval)
       }
     })
 
     if (opts.poll) {
-      human(opts.interval || '1s', (err, value) => {
-        if (err) {
-          return stream.end(errCode(err, 'ERR_INVALID_POLL_INTERVAL'))
-        }
+      let value
+      try {
+        value = human(opts.interval || '1s')
+      } catch (err) {
+        // Pull stream expects async work, so we need to simulate it.
+        process.nextTick(() => {
+          stream.end(errCode(err, 'ERR_INVALID_POLL_INTERVAL'))
+        })
+      }
 
-        interval = setInterval(() => {
-          bandwidthStats(self, opts)
-            .then((stats) => stream.push(stats))
-            .catch((err) => stream.end(err))
-        }, value)
-      })
+      interval = setInterval(() => {
+        bandwidthStats(self, opts)
+          .then((stats) => stream.push(stats))
+          .catch((err) => {
+            if (interval) {
+              clearInterval(interval)
+            }
+            stream.end(err)
+          })
+      }, value)
     } else {
       bandwidthStats(self, opts)
         .then((stats) => {

@@ -1,7 +1,7 @@
 'use strict'
 
 const multibase = require('multibase')
-const { print, rightpad } = require('../utils')
+const { rightpad } = require('../utils')
 const { cidToString } = require('../../utils/cid')
 
 module.exports = {
@@ -34,11 +34,10 @@ module.exports = {
     }
   },
 
-  handler ({ ipfs, key, recursive, headers, cidBase }) {
-    ipfs.ls(key, { recursive }, (err, links) => {
-      if (err) {
-        throw err
-      }
+  handler ({ getIpfs, print, key, recursive, headers, cidBase, resolve }) {
+    resolve((async () => {
+      const ipfs = await getIpfs()
+      let links = await ipfs.ls(key, { recursive })
 
       links = links.map(file => Object.assign(file, { hash: cidToString(file.hash, { base: cidBase }) }))
 
@@ -60,10 +59,10 @@ module.exports = {
         const padding = link.depth - pathParts.length
         print(
           rightpad(link.hash, multihashWidth + 1) +
-          rightpad(link.size || '', sizeWidth + 1) +
+          rightpad(link.size || '-', sizeWidth + 1) +
           '  '.repeat(padding) + fileName
         )
       })
-    })
+    })())
   }
 }

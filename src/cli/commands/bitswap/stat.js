@@ -1,7 +1,6 @@
 'use strict'
 
 const multibase = require('multibase')
-const { print } = require('../../utils')
 const { cidToString } = require('../../../utils/cid')
 
 module.exports = {
@@ -17,12 +16,10 @@ module.exports = {
     }
   },
 
-  handler ({ ipfs, cidBase }) {
-    ipfs.bitswap.stat((err, stats) => {
-      if (err) {
-        throw err
-      }
-
+  handler ({ getIpfs, print, cidBase, resolve }) {
+    resolve((async () => {
+      const ipfs = await getIpfs()
+      const stats = await ipfs.bitswap.stat()
       stats.wantlist = stats.wantlist.map(k => cidToString(k['/'], { base: cidBase, upgrade: false }))
       stats.peers = stats.peers || []
 
@@ -34,6 +31,6 @@ module.exports = {
     ${stats.wantlist.join('\n    ')}
   partners [${stats.peers.length}]
     ${stats.peers.join('\n    ')}`)
-    })
+    })())
   }
 }

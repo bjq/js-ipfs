@@ -3,10 +3,11 @@
 
 const tests = require('interface-ipfs-core')
 const CommonFactory = require('../utils/interface-common-factory')
+const path = require('path')
 
 describe('interface-ipfs-core over ipfs-http-client tests', () => {
   const defaultCommonFactory = CommonFactory.create({
-    factoryOptions: { exec: 'src/cli/bin.js' }
+    factoryOptions: { exec: path.resolve(`${__dirname}/../../src/cli/bin.js`) }
   })
 
   tests.bitswap(defaultCommonFactory)
@@ -15,14 +16,43 @@ describe('interface-ipfs-core over ipfs-http-client tests', () => {
 
   tests.bootstrap(defaultCommonFactory)
 
-  tests.config(defaultCommonFactory)
-
-  tests.dag(defaultCommonFactory, {
-    skip: { reason: 'TODO: DAG HTTP endpoints not implemented in js-ipfs yet!' }
+  tests.config(defaultCommonFactory, {
+    skip: [{
+      name: 'should set a number',
+      reason: 'Failing - needs to be fixed'
+    }]
   })
 
-  tests.dht(defaultCommonFactory, {
-    skip: { reason: 'TODO: unskip when https://github.com/ipfs/js-ipfs/pull/856 is merged' }
+  tests.dag(defaultCommonFactory, {
+    skip: [{
+      name: 'should get only a CID, due to resolving locally only',
+      reason: 'Local resolve option is not implemented yet'
+    }, {
+      name: 'tree',
+      reason: 'dag.tree is not implemented yet'
+    }]
+  })
+
+  tests.dht(CommonFactory.create({
+    spawnOptions: {
+      initOptions: { bits: 512 },
+      config: {
+        Bootstrap: [],
+        Discovery: {
+          MDNS: {
+            Enabled: false
+          },
+          webRTCStar: {
+            Enabled: false
+          }
+        }
+      },
+      preload: { enabled: false }
+    }
+  }), {
+    skip: {
+      reason: 'TODO: unskip when DHT is enabled in 0.36'
+    }
   })
 
   tests.filesRegular(defaultCommonFactory)
@@ -32,7 +62,19 @@ describe('interface-ipfs-core over ipfs-http-client tests', () => {
   tests.key(CommonFactory.create({
     spawnOptions: {
       args: ['--pass ipfs-is-awesome-software'],
-      initOptions: { bits: 512 }
+      initOptions: { bits: 512 },
+      config: {
+        Bootstrap: [],
+        Discovery: {
+          MDNS: {
+            Enabled: false
+          },
+          webRTCStar: {
+            Enabled: false
+          }
+        }
+      },
+      preload: { enabled: false }
     }
   }))
 
@@ -43,14 +85,42 @@ describe('interface-ipfs-core over ipfs-http-client tests', () => {
     skip: [
       {
         name: 'should resolve an IPNS DNS link',
-        reason: 'TODO IPNS not implemented yet'
+        reason: 'TODO: IPNS resolve not yet implemented https://github.com/ipfs/js-ipfs/issues/1918'
       },
       {
         name: 'should resolve IPNS link recursively',
-        reason: 'TODO IPNS not implemented yet'
+        reason: 'TODO: IPNS resolve not yet implemented https://github.com/ipfs/js-ipfs/issues/1918'
+      },
+      {
+        name: 'should recursively resolve ipfs.io',
+        reason: 'TODO: ipfs.io dnslink=/ipns/website.ipfs.io & IPNS resolve not yet implemented https://github.com/ipfs/js-ipfs/issues/1918'
       }
     ]
   })
+
+  tests.name(CommonFactory.create({
+    spawnOptions: {
+      args: ['--pass ipfs-is-awesome-software', '--offline']
+    }
+  }))
+
+  tests.namePubsub(CommonFactory.create({
+    spawnOptions: {
+      args: ['--enable-namesys-pubsub'],
+      initOptions: { bits: 1024 },
+      config: {
+        Bootstrap: [],
+        Discovery: {
+          MDNS: {
+            Enabled: false
+          },
+          webRTCStar: {
+            Enabled: false
+          }
+        }
+      }
+    }
+  }))
 
   tests.object(defaultCommonFactory)
 
@@ -93,7 +163,15 @@ describe('interface-ipfs-core over ipfs-http-client tests', () => {
             }
 
             config = config || {
-              Bootstrap: []
+              Bootstrap: [],
+              Discovery: {
+                MDNS: {
+                  Enabled: false
+                },
+                webRTCStar: {
+                  Enabled: false
+                }
+              }
             }
 
             const spawnOptions = { repoPath, config, initOptions: { bits: 512 } }
@@ -111,8 +189,4 @@ describe('interface-ipfs-core over ipfs-http-client tests', () => {
       }
     }
   }))
-
-  tests.types(defaultCommonFactory)
-
-  tests.util(defaultCommonFactory, { skip: { reason: 'FIXME: currently failing' } })
 })

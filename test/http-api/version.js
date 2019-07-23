@@ -5,9 +5,9 @@ const chai = require('chai')
 const dirtyChai = require('dirty-chai')
 const expect = chai.expect
 chai.use(dirtyChai)
-
+const path = require('path')
 const DaemonFactory = require('ipfsd-ctl')
-const df = DaemonFactory.create({ exec: 'src/cli/bin.js' })
+const df = DaemonFactory.create({ exec: path.resolve(`${__dirname}/../../src/cli/bin.js`) })
 
 describe('version endpoint', () => {
   let ipfs = null
@@ -16,7 +16,17 @@ describe('version endpoint', () => {
     this.timeout(20 * 1000)
     df.spawn({
       initOptions: { bits: 512 },
-      config: { Bootstrap: [] }
+      config: {
+        Bootstrap: [],
+        Discovery: {
+          MDNS: {
+            Enabled: false
+          },
+          webRTCStar: {
+            Enabled: false
+          }
+        }
+      }
     }, (err, _ipfsd) => {
       expect(err).to.not.exist()
       ipfsd = _ipfsd

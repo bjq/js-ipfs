@@ -1,7 +1,5 @@
 'use strict'
 
-const print = require('../../utils').print
-
 module.exports = {
   command: 'resolve [<name>]',
 
@@ -9,33 +7,30 @@ module.exports = {
 
   builder: {
     nocache: {
+      type: 'boolean',
       alias: 'n',
       describe: 'Do not use cached entries. Default: false.',
       default: false
     },
     recursive: {
+      type: 'boolean',
       alias: 'r',
-      recursive: 'Resolve until the result is not an IPNS name. Default: false.',
-      default: false
+      describe: 'Resolve until the result is not an IPNS name. Default: true.',
+      default: true
     }
   },
 
   handler (argv) {
-    const opts = {
-      nocache: argv.nocache,
-      recursive: argv.recursive
-    }
-
-    argv.ipfs.name.resolve(argv.name, opts, (err, result) => {
-      if (err) {
-        throw err
+    argv.resolve((async () => {
+      const opts = {
+        nocache: argv.nocache,
+        recursive: argv.recursive
       }
 
-      if (result && result.path) {
-        print(result.path)
-      } else {
-        print(result)
-      }
-    })
+      const ipfs = await argv.getIpfs()
+      const result = await ipfs.name.resolve(argv.name, opts)
+
+      argv.print(result)
+    })())
   }
 }

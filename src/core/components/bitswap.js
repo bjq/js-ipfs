@@ -3,13 +3,13 @@
 const OFFLINE_ERROR = require('../utils').OFFLINE_ERROR
 const promisify = require('promisify-es6')
 const setImmediate = require('async/setImmediate')
-const Big = require('big.js')
+const Big = require('bignumber.js')
 const CID = require('cids')
 const PeerId = require('peer-id')
 const errCode = require('err-code')
 
 function formatWantlist (list, cidBase) {
-  return Array.from(list).map((e) => ({ '/': e[1].cid.toBaseEncodedString() }))
+  return Array.from(list).map((e) => ({ '/': e[1].cid.toBaseEncodedString(cidBase) }))
 }
 
 module.exports = function bitswap (self) {

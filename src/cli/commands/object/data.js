@@ -1,7 +1,5 @@
 'use strict'
 
-const print = require('../../utils').print
-
 module.exports = {
   command: 'data <key>',
 
@@ -10,14 +8,10 @@ module.exports = {
   builder: {},
 
   handler (argv) {
-    argv.ipfs.object.data(argv.key, {
-      enc: 'base58'
-    }, (err, data) => {
-      if (err) {
-        throw err
-      }
-
-      print(data, false)
-    })
+    argv.resolve((async () => {
+      const ipfs = await argv.getIpfs()
+      const data = await ipfs.object.data(argv.key, { enc: 'base58' })
+      argv.print(data, false)
+    })())
   }
 }

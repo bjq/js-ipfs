@@ -8,20 +8,21 @@ const ipfsdServer = IPFSFactory.createServer()
 const preloadNode = MockPreloadNode.createNode()
 
 module.exports = {
+  bundlesize: { maxSize: '881kB' },
   webpack: {
     resolve: {
-      mainFields: ['browser', 'main']
+      mainFields: ['browser', 'main'],
+      aliasFields: ['browser', 'browser-all-ipld-formats'],
     }
   },
   karma: {
     files: [{
-      pattern: 'node_modules/interface-ipfs-core/js/test/fixtures/**/*',
+      pattern: 'node_modules/interface-ipfs-core/test/fixtures/**/*',
       watched: false,
       served: true,
       included: false
     }],
     browserNoActivityTimeout: 100 * 1000,
-    singleRun: true
   },
   hooks: {
     node: {

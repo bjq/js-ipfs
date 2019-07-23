@@ -1,118 +1,81 @@
 #! /usr/bin/env node
 
+/* eslint-disable no-console */
 'use strict'
 
+process.on('uncaughtException', (err) => {
+  console.info(err)
+
+  throw err
+})
+
+process.on('unhandledRejection', (err) => {
+  console.info(err)
+
+  throw err
+})
+
+const semver = require('semver')
+const pkg = require('../../package.json')
+
+if (!semver.satisfies(process.versions.node, pkg.engines.node)) {
+  console.error(`Please update your Node.js version to ${pkg.engines.node}`)
+  process.exit(1)
+}
+
 const YargsPromise = require('yargs-promise')
-const yargs = require('yargs')
 const updateNotifier = require('update-notifier')
-const readPkgUp = require('read-pkg-up')
-const utils = require('./utils')
-const print = utils.print
+const { print } = require('./utils')
 const mfs = require('ipfs-mfs/cli')
 const debug = require('debug')('ipfs:cli')
+const parser = require('./parser')
+const commandAlias = require('./command-alias')
 
-const pkg = readPkgUp.sync({ cwd: __dirname }).pkg
-updateNotifier({
-  pkg,
-  updateCheckInterval: 1000 * 60 * 60 * 24 * 7 // 1 week
-}).notify()
+function main (args) {
+  const oneWeek = 1000 * 60 * 60 * 24 * 7
+  updateNotifier({ pkg, updateCheckInterval: oneWeek }).notify()
 
-const args = process.argv.slice(2)
+  const cli = new YargsPromise(parser)
 
-const cli = yargs
-  .option('silent', {
-    desc: 'Write no output',
-    type: 'boolean',
-    default: false,
-    coerce: ('silent', silent => {
-      if (silent) {
-        utils.disablePrinting()
-      }
-      return silent
-    })
-  })
-  .option('pass', {
-    desc: 'Pass phrase for the keys',
-    type: 'string',
-    default: ''
-  })
-  .epilog(utils.ipfsPathHelp)
-  .demandCommand(1)
-  .fail((msg, err, yargs) => {
-    if (err) {
-      throw err // preserve stack
-    }
+  // add MFS (Files API) commands
+  mfs(cli)
 
-    if (args.length > 0) {
-      print(msg)
-    }
+  let getIpfs = null
 
-    yargs.showHelp()
-  })
+  // Apply command aliasing (eg `refs local` -> `refs-local`)
+  args = commandAlias(args)
 
-// Need to skip to avoid locking as these commands
-// don't require a daemon
-if (args[0] === 'daemon' || args[0] === 'init') {
   cli
-    .help()
-    .strict()
-    .completion()
-    .command(require('./commands/daemon'))
-    .command(require('./commands/init'))
     .parse(args)
-} else {
-  // here we have to make a separate yargs instance with
-  // only the `api` option because we need this before doing
-  // the final yargs parse where the command handler is invoked..
-  yargs().option('api').parse(process.argv, (err, argv, output) => {
-    if (err) {
-      throw err
-    }
-
-    utils.getIPFS(argv, (err, ipfs, cleanup) => {
-      if (err) {
-        throw err
+    .then(({ data, argv }) => {
+      getIpfs = argv.getIpfs
+      if (data) {
+        print(data)
       }
-
-      // add MFS (Files API) commands
-      mfs(cli)
-
-      cli
-        .commandDir('commands')
-        .help()
-        .strict()
-        .completion()
-
-      let exitCode = 0
-
-      const parser = new YargsPromise(cli, { ipfs })
-      parser.parse(args)
-        .then(({ data, argv }) => {
-          if (data) {
-            print(data)
-          }
-        })
-        .catch((arg) => {
-          debug(arg)
-
-          // the argument can have a different shape depending on where the error came from
-          if (arg.message) {
-            print(arg.message)
-          } else if (arg.error && arg.error.message) {
-            print(arg.error.message)
-          } else {
-            print('Unknown error, please re-run the command with DEBUG=ipfs:cli to see debug output')
-          }
-
-          exitCode = 1
-        })
-        .then(() => cleanup())
-        .catch(() => {})
-        .then(() => {
-          if (exitCode !== 0) {
-            process.exit(exitCode)
-          }
-        })
     })
-  })
+    .catch(({ error, argv }) => {
+      getIpfs = argv && argv.getIpfs
+      debug(error)
+      // the argument can have a different shape depending on where the error came from
+      if (error.message || (error.error && error.error.message)) {
+        print(error.message || error.error.message)
+      } else {
+        print('Unknown error, please re-run the command with DEBUG=ipfs:cli to see debug output')
+      }
+      process.exit(1)
+    })
+    .finally(async () => {
+      // If an IPFS instance was used in the handler then clean it up here
+      if (getIpfs && getIpfs.instance) {
+        try {
+          const cleanup = getIpfs.rest[0]
+          await cleanup()
+        } catch (err) {
+          debug(err)
+          process.exit(1)
+        }
+      }
+    })
 }
+
+main(process.argv.slice(2))

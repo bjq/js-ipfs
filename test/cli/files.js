@@ -223,7 +223,7 @@ describe('files', () => runOnAndOff((thing) => {
     return ipfs('add test/fixtures/less-than-default-max-chunk-size --cid-version=1')
       .then((out) => {
         expect(out)
-          .to.eql('added zb2rhh5LdXumxQfNZCqV8pmcC56LX71ERgf2qCNQsmZnwYYx9 less-than-default-max-chunk-size\n')
+          .to.eql('added bafkreie3abdlmy7dtxddm4vkbhd2x2yax5scf4m35eyxf3ywj2uwkjbhgi less-than-default-max-chunk-size\n')
       })
   })
 
@@ -233,7 +233,7 @@ describe('files', () => runOnAndOff((thing) => {
     return ipfs('add test/fixtures/greater-than-default-max-chunk-size --cid-version=1')
       .then((out) => {
         expect(out)
-          .to.eql('added zdj7WbyyZoWVifUHUe58SNS184PpN8qAuCP6HpAY91iA8CveT greater-than-default-max-chunk-size\n')
+          .to.eql('added bafybeiebjiahgamnil3r3os2hqorjualrgx6hpqh5zuqbhjmt7tyjqqttm greater-than-default-max-chunk-size\n')
       })
   })
 
@@ -243,7 +243,7 @@ describe('files', () => runOnAndOff((thing) => {
     return ipfs(`add test/fixtures/less-than-default-max-chunk-size --cid-version=1 --raw-leaves=false`)
       .then((out) => {
         expect(out)
-          .to.eql('added zdj7WWPWpmpFkrWJBhUEZ4QkGumsFsEdkaaEGs7U4dzJraogp less-than-default-max-chunk-size\n')
+          .to.eql('added bafybeiaoh5okvpnuhndsz4kgdhulnkm566rz7w7il6r2zm6wxu5f5uqlsu less-than-default-max-chunk-size\n')
       })
   })
 
@@ -253,7 +253,7 @@ describe('files', () => runOnAndOff((thing) => {
     return ipfs(`add test/fixtures/greater-than-default-max-chunk-size --cid-version=1 --raw-leaves=false`)
       .then((out) => {
         expect(out)
-          .to.eql('added zdj7WmYojH6vMkDQFNDNwUy2ZawrggqAhS6jjRJwb1C4KXZni greater-than-default-max-chunk-size\n')
+          .to.eql('added bafybeiajpcrr2qglyeq3biilzt25ty6kpjs7huy2lfxopqfke6riaaxnim greater-than-default-max-chunk-size\n')
       })
   })
 
@@ -263,7 +263,7 @@ describe('files', () => runOnAndOff((thing) => {
     return ipfs('add test/fixtures/less-than-default-max-chunk-size --cid-version=1 --raw-leaves=true')
       .then((out) => {
         expect(out)
-          .to.eql('added zb2rhh5LdXumxQfNZCqV8pmcC56LX71ERgf2qCNQsmZnwYYx9 less-than-default-max-chunk-size\n')
+          .to.eql('added bafkreie3abdlmy7dtxddm4vkbhd2x2yax5scf4m35eyxf3ywj2uwkjbhgi less-than-default-max-chunk-size\n')
       })
   })
 
@@ -273,7 +273,18 @@ describe('files', () => runOnAndOff((thing) => {
     return ipfs('add test/fixtures/greater-than-default-max-chunk-size --cid-version=1 --raw-leaves=true')
       .then((out) => {
         expect(out)
-          .to.eql('added zdj7WbyyZoWVifUHUe58SNS184PpN8qAuCP6HpAY91iA8CveT greater-than-default-max-chunk-size\n')
+          .to.eql('added bafybeiebjiahgamnil3r3os2hqorjualrgx6hpqh5zuqbhjmt7tyjqqttm greater-than-default-max-chunk-size\n')
+      })
+  })
+
+  it('add from pipe', () => {
+    const proc = ipfs('add')
+    proc.stdin.write(Buffer.from('hello\n'))
+    proc.stdin.end()
+    return proc
+      .then(out => {
+        expect(out)
+          .to.eql('added QmZULkCELmmk5XNfCgTnCyFgAVxBRBXyDHGGMVoLFLiXEN QmZULkCELmmk5XNfCgTnCyFgAVxBRBXyDHGGMVoLFLiXEN\n')
       })
   })
 
@@ -283,7 +294,7 @@ describe('files', () => runOnAndOff((thing) => {
     return ipfs('add -q src/init-files/init-docs/readme')
       .then((out) => {
         expect(out)
-          .to.eql('added QmPZ9gcCEpqKTo6aq61g2nXGUhM4iCL3ewB6LDXZCtioEB\n')
+          .to.eql('QmPZ9gcCEpqKTo6aq61g2nXGUhM4iCL3ewB6LDXZCtioEB\n')
       })
   })
 

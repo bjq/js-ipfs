@@ -1,14 +1,13 @@
 'use strict'
 
-const utils = require('../utils')
-const print = utils.print
+const { ipfsPathHelp } = require('../utils')
 
 module.exports = {
   command: 'init [config] [options]',
   describe: 'Initialize a local IPFS node',
   builder (yargs) {
     return yargs
-      .epilog(utils.ipfsPathHelp)
+      .epilog(ipfsPathHelp)
       .positional('config', {
         describe: 'Node config, this should JSON and will be merged with the default config. Check https://github.com/ipfs/js-ipfs#optionsconfig',
         type: 'string'
@@ -32,34 +31,36 @@ module.exports = {
   },
 
   handler (argv) {
-    const path = utils.getRepoPath()
+    argv.resolve((async () => {
+      const path = argv.getRepoPath()
 
-    print(`initializing ipfs node at ${path}`)
+      argv.print(`initializing ipfs node at ${path}`)
 
-    // Required inline to reduce startup time
-    const IPFS = require('../../core')
-    const Repo = require('ipfs-repo')
+      // Required inline to reduce startup time
+      const IPFS = require('../../core')
+      const Repo = require('ipfs-repo')
 
-    const node = new IPFS({
-      repo: new Repo(path),
-      init: false,
-      start: false,
-      config: argv.config || {}
-    })
+      const node = new IPFS({
+        repo: new Repo(path),
+        init: false,
+        start: false,
+        config: argv.config || {}
+      })
 
-    node.init({
-      bits: argv.bits,
-      privateKey: argv.privateKey,
-      emptyRepo: argv.emptyRepo,
-      pass: argv.pass,
-      log: print
-    }, (err) => {
-      if (err) {
+      try {
+        await node.init({
+          bits: argv.bits,
+          privateKey: argv.privateKey,
+          emptyRepo: argv.emptyRepo,
+          pass: argv.pass,
+          log: argv.print
+        })
+      } catch (err) {
         if (err.code === 'EACCES') {
           err.message = `EACCES: permission denied, stat $IPFS_PATH/version`
         }
         throw err
       }
-    })
+    })())
   }
 }

@@ -1,9 +1,9 @@
 'use strict'
 
 const debug = require('debug')
-
-const log = debug('jsipfs:mfs-preload')
-log.error = debug('jsipfs:mfs-preload:error')
+const setImmediate = require('async/setImmediate')
+const log = debug('ipfs:mfs-preload')
+log.error = debug('ipfs:mfs-preload:error')
 
 module.exports = (self) => {
   const options = self._options.preload || {}

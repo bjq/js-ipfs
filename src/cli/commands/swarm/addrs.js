@@ -1,7 +1,5 @@
 'use strict'
 
-const print = require('../../utils').print
-
 module.exports = {
   command: 'addrs',
 
@@ -13,20 +11,31 @@ module.exports = {
   },
 
   handler (argv) {
-    argv.ipfs.swarm.addrs((err, res) => {
-      if (err) {
-        throw err
-      }
+    argv.resolve((async () => {
+      const ipfs = await argv.getIpfs()
+      const res = await ipfs.swarm.addrs()
 
-      res.forEach((peer) => {
+      const output = res.map((peer) => {
         const count = peer.multiaddrs.size
-        print(`${peer.id.toB58String()} (${count})`)
+        const peerAddrs = [`${peer.id.toB58String()} (${count})`]
 
-        peer.multiaddrs.forEach((addr) => {
-          const res = addr.decapsulate('ipfs').toString()
-          print(`\t${res}`)
+        peer.multiaddrs.toArray().map((addr) => {
+          let res
+          try {
+            res = addr.decapsulate('ipfs').toString()
+          } catch (_) {
+            // peer addresses dont need to have /ipfs/ as we know their peerId
+            // and can encapsulate on dial.
+            res = addr.toString()
+          }
+          peerAddrs.push(`\t${res}`)
         })
+
+        return peerAddrs.join('\n')
       })
-    })
+
+      // Return the output for printing
+      return { data: output.join('\n'), argv }
+    })())
   }
 }

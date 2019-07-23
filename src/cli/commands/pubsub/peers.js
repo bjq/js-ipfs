@@ -1,7 +1,5 @@
 'use strict'
 
-const print = require('../../utils').print
-
 module.exports = {
   command: 'peers <topic>',
 
@@ -10,12 +8,10 @@ module.exports = {
   builder: {},
 
   handler (argv) {
-    argv.ipfs.pubsub.peers(argv.topic, (err, peers) => {
-      if (err) {
-        throw err
-      }
-
-      peers.forEach((peer) => print(peer))
-    })
+    argv.resolve((async () => {
+      const ipfs = await argv.getIpfs()
+      const peers = await ipfs.pubsub.peers(argv.topic)
+      peers.forEach(peer => argv.print(peer))
+    })())
   }
 }

@@ -1,7 +1,5 @@
 'use strict'
 
-const print = require('../../utils').print
-
 module.exports = {
   command: 'ls',
 
@@ -10,14 +8,10 @@ module.exports = {
   builder: {},
 
   handler (argv) {
-    argv.ipfs.pubsub.ls((err, subscriptions) => {
-      if (err) {
-        throw err
-      }
-
-      subscriptions.forEach((sub) => {
-        print(sub)
-      })
-    })
+    argv.resolve((async () => {
+      const ipfs = await argv.getIpfs()
+      const subscriptions = await ipfs.pubsub.ls()
+      subscriptions.forEach(sub => argv.print(sub))
+    })())
   }
 }

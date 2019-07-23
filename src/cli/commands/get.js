@@ -5,7 +5,6 @@ const path = require('path')
 const mkdirp = require('mkdirp')
 const pull = require('pull-stream')
 const toPull = require('stream-to-pull-stream')
-const print = require('../utils').print
 
 function checkArgs (hash, outPath) {
   // format the output directory
@@ -58,20 +57,24 @@ module.exports = {
     }
   },
 
-  handler ({ ipfs, ipfsPath, output }) {
-    const dir = checkArgs(ipfsPath, output)
-    const stream = ipfs.getReadableStream(ipfsPath)
+  handler ({ getIpfs, print, ipfsPath, output, resolve }) {
+    resolve((async () => {
+      const ipfs = await getIpfs()
 
-    stream.once('error', (err) => {
-      if (err) { throw err }
-    })
-    print(`Saving file(s) ${ipfsPath}`)
-    pull(
-      toPull.source(stream),
-      pull.asyncMap(fileHandler(dir)),
-      pull.onEnd((err) => {
-        if (err) { throw err }
+      return new Promise((resolve, reject) => {
+        const dir = checkArgs(ipfsPath, output)
+        const stream = ipfs.getReadableStream(ipfsPath)
+
+        print(`Saving file(s) ${ipfsPath}`)
+        pull(
+          toPull.source(stream),
+          pull.asyncMap(fileHandler(dir)),
+          pull.onEnd((err) => {
+            if (err) return reject(err)
+            resolve()
+          })
+        )
       })
-    )
+    })())
   }
 }

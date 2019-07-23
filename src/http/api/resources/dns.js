@@ -1,24 +1,22 @@
 'use strict'
 
-const boom = require('boom')
+const Boom = require('@hapi/boom')
 
-exports = module.exports
+module.exports = async (request, h) => {
+  const domain = request.query.arg
 
-exports.get = (request, reply) => {
-  if (!request.query.arg) {
-    return reply({
-      Message: "Argument 'domain' is required",
-      Code: 0
-    }).code(400).takeover()
+  if (!domain) {
+    throw Boom.badRequest("Argument 'domain' is required")
   }
 
-  request.server.app.ipfs.dns(request.query.arg, (err, path) => {
-    if (err) {
-      return reply(boom.badRequest(err))
-    }
+  const format = request.query.format
 
-    return reply({
-      Path: path
-    })
+  // query parameters are passed as strings and need to be parsed to expected type
+  let recursive = request.query.recursive || request.query.r
+  recursive = !(recursive && recursive === 'false')
+
+  const path = await request.server.app.ipfs.dns(domain, { recursive, format })
+  return h.response({
+    Path: path
   })
 }

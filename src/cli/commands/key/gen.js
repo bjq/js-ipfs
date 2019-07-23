@@ -1,7 +1,5 @@
 'use strict'
 
-const print = require('../../utils').print
-
 module.exports = {
   command: 'gen <name>',
 
@@ -22,15 +20,14 @@ module.exports = {
   },
 
   handler (argv) {
-    const opts = {
-      type: argv.type,
-      size: argv.size
-    }
-    argv.ipfs.key.gen(argv.name, opts, (err, key) => {
-      if (err) {
-        throw err
+    argv.resolve((async () => {
+      const opts = {
+        type: argv.type,
+        size: argv.size
       }
-      print(`generated ${key.id} ${key.name}`)
-    })
+      const ipfs = await argv.getIpfs()
+      const key = await ipfs.key.gen(argv.name, opts)
+      argv.print(`generated ${key.id} ${key.name}`)
+    })())
   }
 }

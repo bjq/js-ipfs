@@ -1,7 +1,6 @@
 'use strict'
 
 const multibase = require('multibase')
-const { print } = require('../../utils')
 const { cidToString } = require('../../../utils/cid')
 
 module.exports = {
@@ -23,14 +22,14 @@ module.exports = {
     }
   },
 
-  handler ({ ipfs, ipfsPath, recursive, cidBase }) {
-    const type = recursive ? 'recursive' : 'direct'
-
-    ipfs.pin.add(ipfsPath, { recursive }, (err, results) => {
-      if (err) { throw err }
+  handler ({ getIpfs, print, ipfsPath, recursive, cidBase, resolve }) {
+    resolve((async () => {
+      const type = recursive ? 'recursive' : 'direct'
+      const ipfs = await getIpfs()
+      const results = await ipfs.pin.add(ipfsPath, { recursive })
       results.forEach((res) => {
         print(`pinned ${cidToString(res.hash, { base: cidBase })} ${type}ly`)
       })
-    })
+    })())
   }
 }

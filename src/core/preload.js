@@ -5,10 +5,11 @@ const retry = require('async/retry')
 const toUri = require('multiaddr-to-uri')
 const debug = require('debug')
 const CID = require('cids')
+const shuffle = require('array-shuffle')
 const preload = require('./runtime/preload-nodejs')
 
-const log = debug('jsipfs:preload')
-log.error = debug('jsipfs:preload:error')
+const log = debug('ipfs:preload')
+log.error = debug('ipfs:preload:error')
 
 const noop = (err) => { if (err) log.error(err) }
 
@@ -18,6 +19,7 @@ module.exports = self => {
   options.addresses = options.addresses || []
 
   if (!options.enabled || !options.addresses.length) {
+    log('preload disabled')
     const api = (_, callback) => {
       if (callback) {
         setImmediate(() => callback())
@@ -43,7 +45,7 @@ module.exports = self => {
       }
     }
 
-    const fallbackApiUris = Array.from(apiUris)
+    const fallbackApiUris = shuffle(apiUris)
     let request
     const now = Date.now()
 

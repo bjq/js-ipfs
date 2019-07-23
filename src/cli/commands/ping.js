@@ -1,7 +1,6 @@
 'use strict'
 
 const pull = require('pull-stream')
-const print = require('../utils').print
 
 module.exports = {
   command: 'ping <peerId>',
@@ -17,19 +16,28 @@ module.exports = {
   },
 
   handler (argv) {
-    const peerId = argv.peerId
-    const count = argv.count || 10
-    pull(
-      argv.ipfs.pingPullStream(peerId, { count }),
-      pull.drain(({ success, time, text }) => {
-        // Check if it's a pong
-        if (success && !text) {
-          print(`Pong received: time=${time} ms`)
-        // Status response
-        } else {
-          print(text)
-        }
+    argv.resolve((async () => {
+      const ipfs = await argv.getIpfs()
+
+      return new Promise((resolve, reject) => {
+        const peerId = argv.peerId
+        const count = argv.count || 10
+        pull(
+          ipfs.pingPullStream(peerId, { count }),
+          pull.drain(({ success, time, text }) => {
+            // Check if it's a pong
+            if (success && !text) {
+              argv.print(`Pong received: time=${time} ms`)
+            // Status response
+            } else {
+              argv.print(text)
+            }
+          }, err => {
+            if (err) return reject(err)
+            resolve()
+          })
+        )
       })
-    )
+    })())
   }
 }

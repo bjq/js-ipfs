@@ -1,16 +1,17 @@
 'use strict'
 
 const peerId = require('peer-id')
+const mergeOptions = require('merge-options')
 const waterfall = require('async/waterfall')
 const parallel = require('async/parallel')
 const promisify = require('promisify-es6')
-const defaultsDeep = require('@nodeutils/defaults-deep')
 const defaultConfig = require('../runtime/config-nodejs.js')
 const Keychain = require('libp2p-keychain')
 const {
   DAGNode
 } = require('ipld-dag-pb')
 const UnixFs = require('ipfs-unixfs')
+const multicodec = require('multicodec')
 
 const IPNS = require('../ipns')
 const OfflineDatastore = require('../ipns/routing/offline-datastore')
@@ -59,7 +60,7 @@ module.exports = function init (self) {
     opts.bits = Number(opts.bits) || 2048
     opts.log = opts.log || function () {}
 
-    const config = defaultsDeep(self._options.config, defaultConfig())
+    const config = mergeOptions(defaultConfig(), self._options.config)
     let privateKey
 
     waterfall([
@@ -129,12 +130,21 @@ module.exports = function init (self) {
         const tasks = [
           (cb) => {
             waterfall([
-              (cb) => DAGNode.create(new UnixFs('directory').marshal(), cb),
+              (cb) => {
+                try {
+                  cb(null, DAGNode.create(new UnixFs('directory').marshal()))
+                } catch (err) {
+                  cb(err)
+                }
+              },
               (node, cb) => self.dag.put(node, {
                 version: 0,
-                format: 'dag-pb',
-                hashAlg: 'sha2-256'
-              }, cb),
+                format: multicodec.DAG_PB,
+                hashAlg: multicodec.SHA2_256
+              }).then(
+                (cid) => cb(null, cid),
+                (error) => cb(error)
+              ),
               (cid, cb) => self._ipns.initializeKeyspace(privateKey, cid.toBaseEncodedString(), cb)
             ], cb)
           }

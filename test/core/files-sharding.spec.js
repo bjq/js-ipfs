@@ -47,7 +47,8 @@ describe('files directory (sharding tests)', () => {
               Enabled: false
             }
           }
-        }
+        },
+        preload: { enabled: false }
       }, (err, _ipfsd) => {
         expect(err).to.not.exist()
         ipfsd = _ipfsd
@@ -62,7 +63,7 @@ describe('files directory (sharding tests)', () => {
     })
 
     it('should be able to add dir without sharding', function (done) {
-      this.timeout(40 * 1000)
+      this.timeout(70 * 1000)
 
       pull(
         pull.values(createTestFiles()),
@@ -99,7 +100,8 @@ describe('files directory (sharding tests)', () => {
               Enabled: false
             }
           }
-        }
+        },
+        preload: { enabled: false }
       }, (err, _ipfsd) => {
         expect(err).to.not.exist()
         ipfsd = _ipfsd
@@ -114,7 +116,7 @@ describe('files directory (sharding tests)', () => {
     })
 
     it('should be able to add dir with sharding', function (done) {
-      this.timeout(40 * 1000)
+      this.timeout(80 * 1000)
 
       pull(
         pull.values(createTestFiles()),

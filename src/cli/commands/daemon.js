@@ -1,9 +1,8 @@
 'use strict'
 
-const utils = require('../utils')
-const print = utils.print
-
-let httpAPI
+const os = require('os')
+const toUri = require('multiaddr-to-uri')
+const { ipfsPathHelp } = require('../utils')
 
 module.exports = {
   command: 'daemon',
@@ -12,7 +11,7 @@ module.exports = {
 
   builder (yargs) {
     return yargs
-      .epilog(utils.ipfsPathHelp)
+      .epilog(ipfsPathHelp)
       .option('enable-sharding-experiment', {
         type: 'boolean',
         default: false
@@ -21,54 +20,79 @@ module.exports = {
         type: 'boolean',
         default: false
       })
-      .option('enable-dht-experiment', {
+      .option('offline', {
         type: 'boolean',
-        default: false
-      })
-      .option('local', {
-        desc: 'Run commands locally to the daemon',
+        desc: 'Run offline. Do not connect to the rest of the network but provide local API.',
         default: false
       })
       .option('enable-namesys-pubsub', {
         type: 'boolean',
         default: false
       })
+      .option('enable-preload', {
+        type: 'boolean',
+        default: true
+      })
   },
 
   handler (argv) {
-    print('Initializing IPFS daemon...')
+    argv.resolve((async () => {
+      const { print } = argv
+      print('Initializing IPFS daemon...')
+      print(`js-ipfs version: ${require('../../../package.json').version}`)
+      print(`System version: ${os.arch()}/${os.platform()}`)
+      print(`Node.js version: ${process.versions.node}`)
 
-    const repoPath = utils.getRepoPath()
+      const repoPath = argv.getRepoPath()
 
-    // Required inline to reduce startup time
-    const HttpAPI = require('../../http')
-    httpAPI = new HttpAPI(process.env.IPFS_PATH, null, argv)
+      // Required inline to reduce startup time
+      const Daemon = require('../../cli/daemon')
+      const daemon = new Daemon({
+        silent: argv.silent,
+        repo: process.env.IPFS_PATH,
+        offline: argv.offline,
+        pass: argv.pass,
+        preload: { enabled: argv.enablePreload },
+        EXPERIMENTAL: {
+          pubsub: argv.enablePubsubExperiment,
+          ipnsPubsub: argv.enableNamesysPubsub,
+          dht: argv.enableDhtExperiment,
+          sharding: argv.enableShardingExperiment
+        }
+      })
 
-    httpAPI.start((err) => {
-      if (err && err.code === 'ENOENT' && err.message.match(/uninitialized/i)) {
-        print('Error: no initialized ipfs repo found in ' + repoPath)
-        print('please run: jsipfs init')
-        process.exit(1)
-      }
-      if (err) {
+      try {
+        await daemon.start()
+        daemon._httpApi._apiServers.forEach(apiServer => {
+          print(`API listening on ${apiServer.info.ma.toString()}`)
+        })
+        daemon._httpApi._gatewayServers.forEach(gatewayServer => {
+          print(`Gateway (read only) listening on ${gatewayServer.info.ma.toString()}`)
+        })
+        daemon._httpApi._apiServers.forEach(apiServer => {
+          print(`Web UI available at ${toUri(apiServer.info.ma)}/webui`)
+        })
+      } catch (err) {
+        if (err.code === 'ENOENT' && err.message.match(/uninitialized/i)) {
+          print('Error: no initialized ipfs repo found in ' + repoPath)
+          print('please run: jsipfs init')
+          process.exit(1)
+        }
         throw err
       }
+
       print('Daemon is ready')
-    })
 
-    const cleanup = () => {
-      print(`Received interrupt signal, shutting down..`)
-      httpAPI.stop((err) => {
-        if (err) {
-          throw err
-        }
+      const cleanup = async () => {
+        print(`Received interrupt signal, shutting down...`)
+        await daemon.stop()
         process.exit(0)
-      })
-    }
+      }
 
-    // listen for graceful termination
-    process.on('SIGTERM', cleanup)
-    process.on('SIGINT', cleanup)
-    process.on('SIGHUP', cleanup)
+      // listen for graceful termination
+      process.on('SIGTERM', cleanup)
+      process.on('SIGINT', cleanup)
+      process.on('SIGHUP', cleanup)
+    })())
   }
 }

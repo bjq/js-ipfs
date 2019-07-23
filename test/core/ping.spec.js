@@ -9,10 +9,10 @@ const parallel = require('async/parallel')
 const series = require('async/series')
 const DaemonFactory = require('ipfsd-ctl')
 const isNode = require('detect-node')
-
+const path = require('path')
 const expect = chai.expect
 chai.use(dirtyChai)
-const df = DaemonFactory.create({ exec: 'src/cli/bin.js' })
+const df = DaemonFactory.create({ exec: path.resolve(`${__dirname}/../../src/cli/bin.js`) })
 const dfProc = DaemonFactory.create({
   exec: require('../../'),
   type: 'proc'
@@ -29,12 +29,13 @@ const config = {
 }
 
 function spawnNode ({ dht = false, type = 'js' }, cb) {
-  const args = dht ? ['--enable-dht-experiment'] : []
+  const args = dht ? [] : ['--offline']
   const factory = type === 'js' ? df : dfProc
   factory.spawn({
     args,
     config,
-    initOptions: { bits: 512 }
+    initOptions: { bits: 512 },
+    preload: { enabled: false }
   }, cb)
 }
 
@@ -194,7 +195,8 @@ describe('ping', function () {
     })
   })
 
-  describe('DHT enabled', function () {
+  // TODO: unskip when DHT enabled in 0.36
+  describe.skip('DHT enabled', function () {
     // Our bootstrap process will run 3 IPFS daemons where
     // A ----> B ----> C
     // Allowing us to test the ping command using the DHT peer routing

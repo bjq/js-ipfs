@@ -1,7 +1,6 @@
 'use strict'
 
 const promisify = require('promisify-es6')
-const values = require('lodash/values')
 
 const OFFLINE_ERROR = require('../utils').OFFLINE_ERROR
 
@@ -25,7 +24,7 @@ module.exports = function swarm (self) {
 
       const peers = []
 
-      values(self._peerInfoBook.getAll()).forEach((peer) => {
+      Object.values(self._peerInfoBook.getAll()).forEach((peer) => {
         const connectedAddr = peer.isConnected()
 
         if (!connectedAddr) { return }
@@ -50,7 +49,7 @@ module.exports = function swarm (self) {
         return callback(new Error(OFFLINE_ERROR))
       }
 
-      const peers = values(self._peerInfoBook.getAll())
+      const peers = Object.values(self._peerInfoBook.getAll())
 
       callback(null, peers)
     }),
@@ -60,7 +59,7 @@ module.exports = function swarm (self) {
         return callback(new Error(OFFLINE_ERROR))
       }
 
-      callback(null, self._libp2pNode.peerInfo.multiaddrs.toArray())
+      callback(null, self.libp2p.peerInfo.multiaddrs.toArray())
     }),
 
     connect: promisify((maddr, callback) => {
@@ -68,7 +67,7 @@ module.exports = function swarm (self) {
         return callback(new Error(OFFLINE_ERROR))
       }
 
-      self._libp2pNode.dial(maddr, callback)
+      self.libp2p.dial(maddr, callback)
     }),
 
     disconnect: promisify((maddr, callback) => {
@@ -76,7 +75,7 @@ module.exports = function swarm (self) {
         return callback(new Error(OFFLINE_ERROR))
       }
 
-      self._libp2pNode.hangUp(maddr, callback)
+      self.libp2p.hangUp(maddr, callback)
     }),
 
     filters: promisify((callback) => callback(new Error('Not implemented')))

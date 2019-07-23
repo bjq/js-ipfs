@@ -1,7 +1,6 @@
 'use strict'
 
 const multibase = require('multibase')
-const { print } = require('../../utils')
 const { cidToString } = require('../../../utils/cid')
 
 module.exports = {
@@ -21,12 +20,11 @@ module.exports = {
       choices: multibase.names
     }
   },
-  handler ({ ipfs, key, cidBase }) {
-    ipfs.bitswap.unwant(key, (err) => {
-      if (err) {
-        throw err
-      }
+  handler ({ getIpfs, print, key, cidBase, resolve }) {
+    resolve((async () => {
+      const ipfs = await getIpfs()
+      await ipfs.bitswap.unwant(key)
       print(`Key ${cidToString(key, { base: cidBase, upgrade: false })} removed from wantlist`)
-    })
+    })())
   }
 }

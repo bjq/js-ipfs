@@ -17,7 +17,7 @@ const fs = require('fs')
 const path = require('path')
 
 const DaemonFactory = require('ipfsd-ctl')
-const df = DaemonFactory.create({ exec: 'src/cli/bin.js' })
+const df = DaemonFactory.create({ exec: path.resolve(`${__dirname}/../../src/cli/bin.js`) })
 
 skipOnWindows('config endpoint', () => {
   const repoExample = path.join(__dirname, '../fixtures/go-ipfs-repo')
@@ -27,6 +27,13 @@ skipOnWindows('config endpoint', () => {
 
   let ipfs = null
   let ipfsd = null
+
+  // wait until the repo is ready to use
+  before(function (done) {
+    this.timeout(10 * 1000)
+
+    setTimeout(done, 5 * 1000)
+  })
 
   before(function (done) {
     this.timeout(20 * 1000)
@@ -38,6 +45,7 @@ skipOnWindows('config endpoint', () => {
         (cb) => df.spawn({
           repoPath: repoPath,
           initOptions: { bits: 512 },
+          config: { Bootstrap: [] },
           disposable: false,
           start: true
         }, cb),
@@ -59,7 +67,8 @@ skipOnWindows('config endpoint', () => {
     })
   })
 
-  after((done) => {
+  after(function (done) {
+    this.timeout(50 * 1000)
     rimraf(repoPath, (err) => {
       expect(err).to.not.exist()
       ipfsd.stop(done)

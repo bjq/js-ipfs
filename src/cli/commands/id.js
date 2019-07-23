@@ -1,5 +1,4 @@
 'use strict'
-const print = require('../utils').print
 
 module.exports = {
   command: 'id',
@@ -14,13 +13,10 @@ module.exports = {
   },
 
   handler (argv) {
-    // TODO: handle argv.format
-    argv.ipfs.id((err, id) => {
-      if (err) {
-        throw err
-      }
-
-      print(JSON.stringify(id, '', 2))
-    })
+    argv.resolve((async () => {
+      const ipfs = await argv.getIpfs()
+      const id = await ipfs.id()
+      argv.print(JSON.stringify(id, '', 2))
+    })())
   }
 }

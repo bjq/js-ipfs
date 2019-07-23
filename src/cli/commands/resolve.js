@@ -1,7 +1,6 @@
 'use strict'
 
 const multibase = require('multibase')
-const print = require('../utils').print
 
 module.exports = {
   command: 'resolve <name>',
@@ -21,11 +20,11 @@ module.exports = {
     }
   },
 
-  handler (argv) {
-    const { recursive, cidBase } = argv
-    argv.ipfs.resolve(argv.name, { recursive, cidBase }, (err, res) => {
-      if (err) throw err
+  handler ({ getIpfs, print, name, recursive, cidBase, resolve }) {
+    resolve((async () => {
+      const ipfs = await getIpfs()
+      const res = await ipfs.resolve(name, { recursive, cidBase })
       print(res)
-    })
+    })())
   }
 }

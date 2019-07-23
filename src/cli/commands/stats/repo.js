@@ -1,7 +1,5 @@
 'use strict'
 
-const print = require('../../utils').print
-
 module.exports = {
   command: 'repo',
 
@@ -15,17 +13,15 @@ module.exports = {
   },
 
   handler (argv) {
-    argv.ipfs.stats.repo({ human: argv.human }, (err, stats) => {
-      if (err) {
-        throw err
-      }
-
-      print(`repo status
+    argv.resolve((async () => {
+      const ipfs = await argv.getIpfs()
+      const stats = await ipfs.stats.repo({ human: argv.human })
+      argv.print(`repo status
   number of objects: ${stats.numObjects}
   repo size: ${stats.repoSize}
   repo path: ${stats.repoPath}
   version: ${stats.version}
   maximum storage: ${stats.storageMax}`)
-    })
+    })())
   }
 }

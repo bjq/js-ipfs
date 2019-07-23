@@ -10,7 +10,21 @@ function createFactory (options) {
   options = options || {}
 
   options.factoryOptions = options.factoryOptions || { type: 'proc', exec: IPFS }
-  options.spawnOptions = options.spawnOptions || { initOptions: { bits: 512 }, config: { Bootstrap: [] } }
+  options.spawnOptions = options.spawnOptions || {
+    initOptions: { bits: 512 },
+    config: {
+      Bootstrap: [],
+      Discovery: {
+        MDNS: {
+          Enabled: false
+        },
+        webRTCStar: {
+          Enabled: false
+        }
+      }
+    },
+    preload: { enabled: false }
+  }
 
   if (options.factoryOptions.type !== 'proc') {
     options.factoryOptions.IpfsClient = options.factoryOptions.IpfsClient || ipfsClient

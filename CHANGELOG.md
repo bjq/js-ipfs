@@ -1,3 +1,438 @@
+<a name="0.37.0-rc.0"></a>
+# [0.37.0-rc.0](https://github.com/ipfs/js-ipfs/compare/v0.36.4...v0.37.0-rc.0) (2019-07-17)
+
+
+### Bug Fixes
+
+* allow setting Addresses.Delegates ([#2253](https://github.com/ipfs/js-ipfs/issues/2253)) ([58a9bc4](https://github.com/ipfs/js-ipfs/commit/58a9bc4))
+* browser video streaming example ([#2267](https://github.com/ipfs/js-ipfs/issues/2267)) ([f5cf216](https://github.com/ipfs/js-ipfs/commit/f5cf216))
+* clean repo func on windows ([#2243](https://github.com/ipfs/js-ipfs/issues/2243)) ([26b92a1](https://github.com/ipfs/js-ipfs/commit/26b92a1))
+* failing test on config ([#2205](https://github.com/ipfs/js-ipfs/issues/2205)) ([5ed9532](https://github.com/ipfs/js-ipfs/commit/5ed9532))
+* ipns reference to libp2p dht config ([#2182](https://github.com/ipfs/js-ipfs/issues/2182)) ([e46e6ad](https://github.com/ipfs/js-ipfs/commit/e46e6ad))
+* passed config validation ([#2270](https://github.com/ipfs/js-ipfs/issues/2270)) ([80e7d81](https://github.com/ipfs/js-ipfs/commit/80e7d81))
+* pin type filtering in pin.ls ([#2228](https://github.com/ipfs/js-ipfs/issues/2228)) ([afdfe7f](https://github.com/ipfs/js-ipfs/commit/afdfe7f))
+* **gateway:** disable compression ([#2245](https://github.com/ipfs/js-ipfs/issues/2245)) ([4ee28e0](https://github.com/ipfs/js-ipfs/commit/4ee28e0))
+* **package:** update file-type to version 12.0.0 ([#2176](https://github.com/ipfs/js-ipfs/issues/2176)) ([3e63ef2](https://github.com/ipfs/js-ipfs/commit/3e63ef2))
+
+
+### Code Refactoring
+
+* **gateway:** return implicit index.html ([#2217](https://github.com/ipfs/js-ipfs/issues/2217)) ([8519886](https://github.com/ipfs/js-ipfs/commit/8519886))
+
+
+### Features
+
+* add delegate routers to libp2p config ([#2195](https://github.com/ipfs/js-ipfs/issues/2195)) ([1aaaab9](https://github.com/ipfs/js-ipfs/commit/1aaaab9))
+* add HTTP Gateway support for /ipns/ paths  ([#2020](https://github.com/ipfs/js-ipfs/issues/2020)) ([43ac305](https://github.com/ipfs/js-ipfs/commit/43ac305)), closes [#1989](https://github.com/ipfs/js-ipfs/issues/1989)
+* add support for ipns name resolve /ipns/<fqdn> ([#2002](https://github.com/ipfs/js-ipfs/issues/2002)) ([5044a30](https://github.com/ipfs/js-ipfs/commit/5044a30)), closes [#1918](https://github.com/ipfs/js-ipfs/issues/1918)
+* randomly pick preload node ([#2194](https://github.com/ipfs/js-ipfs/issues/2194)) ([f596b01](https://github.com/ipfs/js-ipfs/commit/f596b01))
+* ready promise ([#2094](https://github.com/ipfs/js-ipfs/issues/2094)) ([e0994f2](https://github.com/ipfs/js-ipfs/commit/e0994f2))
+* update Web UI to v2.4.6 ([#2147](https://github.com/ipfs/js-ipfs/issues/2147)) ([a1a9fe3](https://github.com/ipfs/js-ipfs/commit/a1a9fe3))
+
+
+### BREAKING CHANGES
+
+* **gateway:** Gateway now implicitly responds with the contents of `/index.html` when accessing a directory `/` instead of redirecting to `/index.html`.
+
+This changes current logic (redirect to index.html) to match what
+go-ipfs does (return index.html without changing URL)
+
+We also ensure directory URLs always end with '/'
+
+License: MIT
+Signed-off-by: Marcin Rataj <lidel@lidel.org>
+
+
+
+<a name="0.36.4"></a>
+## [0.36.4](https://github.com/ipfs/js-ipfs/compare/v0.36.3...v0.36.4) (2019-06-18)
+
+
+
+<a name="0.36.3"></a>
+## [0.36.3](https://github.com/ipfs/js-ipfs/compare/v0.36.2...v0.36.3) (2019-05-30)
+
+
+### Bug Fixes
+
+* double callback in object.links for cbor data ([#2111](https://github.com/ipfs/js-ipfs/issues/2111)) ([5d080c0](https://github.com/ipfs/js-ipfs/commit/5d080c0))
+* fixes rabin chunker truncating files ([#2114](https://github.com/ipfs/js-ipfs/issues/2114)) ([76689ff](https://github.com/ipfs/js-ipfs/commit/76689ff))
+* **package:** update bignumber.js to version 9.0.0 ([#2123](https://github.com/ipfs/js-ipfs/issues/2123)) ([37903ad](https://github.com/ipfs/js-ipfs/commit/37903ad))
+
+
+
+<a name="0.36.2"></a>
+## [0.36.2](https://github.com/ipfs/js-ipfs/compare/v0.36.1...v0.36.2) (2019-05-24)
+
+
+### Bug Fixes
+
+* file support when added as object ([#2105](https://github.com/ipfs/js-ipfs/issues/2105)) ([ba80e40](https://github.com/ipfs/js-ipfs/commit/ba80e40))
+* upgrade electron examples ([#2104](https://github.com/ipfs/js-ipfs/issues/2104)) ([67e1b59](https://github.com/ipfs/js-ipfs/commit/67e1b59))
+
+
+
+<a name="0.36.1"></a>
+## [0.36.1](https://github.com/ipfs/js-ipfs/compare/v0.36.0...v0.36.1) (2019-05-22)
+
+
+### Bug Fixes
+
+* **cli:** make swarm addrs more resilient ([#2083](https://github.com/ipfs/js-ipfs/issues/2083)) ([3792b68](https://github.com/ipfs/js-ipfs/commit/3792b68))
+
+
+
+<a name="0.36.0"></a>
+# [0.36.0](https://github.com/ipfs/js-ipfs/compare/v0.36.0-rc.0...v0.36.0) (2019-05-22)
+
+
+### Bug Fixes
+
+* use trickle builder in daemon mode too ([#2085](https://github.com/ipfs/js-ipfs/issues/2085)) ([62b873f](https://github.com/ipfs/js-ipfs/commit/62b873f))
+* **package:** update libp2p-kad-dht to version 0.15.0 ([#2049](https://github.com/ipfs/js-ipfs/issues/2049)) ([5905760](https://github.com/ipfs/js-ipfs/commit/5905760))
+* browser-mfs example ([#2089](https://github.com/ipfs/js-ipfs/issues/2089)) ([e7d6d3a](https://github.com/ipfs/js-ipfs/commit/e7d6d3a))
+* error when preloding is disabled in the browser ([#2086](https://github.com/ipfs/js-ipfs/issues/2086)) ([a56bcbf](https://github.com/ipfs/js-ipfs/commit/a56bcbf))
+* traverse-ipld-graphs (tree) example ([#2088](https://github.com/ipfs/js-ipfs/issues/2088)) ([b5c652f](https://github.com/ipfs/js-ipfs/commit/b5c652f))
+* update option in exchange files in browser example ([#2087](https://github.com/ipfs/js-ipfs/issues/2087)) ([63469ed](https://github.com/ipfs/js-ipfs/commit/63469ed))
+
+
+
+<a name="0.36.0-rc.0"></a>
+# [0.36.0-rc.0](https://github.com/ipfs/js-ipfs/compare/v0.36.0-pre.0...v0.36.0-rc.0) (2019-05-21)
+
+
+### Code Refactoring
+
+* update ipld formats, async/await mfs/unixfs & base32 cids ([#2068](https://github.com/ipfs/js-ipfs/issues/2068)) ([813048f](https://github.com/ipfs/js-ipfs/commit/813048f)), closes [ipld/js-ipld-dag-pb#137](https://github.com/ipld/js-ipld-dag-pb/issues/137) [ipfs/interface-js-ipfs-core#473](https://github.com/ipfs/interface-js-ipfs-core/issues/473) [ipfs/js-ipfs-http-client#1010](https://github.com/ipfs/js-ipfs-http-client/issues/1010) [ipfs/js-ipfs-http-response#25](https://github.com/ipfs/js-ipfs-http-response/issues/25) [#1995](https://github.com/ipfs/js-ipfs/issues/1995)
+
+
+### BREAKING CHANGES
+
+* The default string encoding for version 1 CIDs has changed to `base32`.
+
+IPLD formats have been updated to the latest versions. IPLD nodes returned by `ipfs.dag` and `ipfs.object` commands have significant breaking changes. If you are using these commands in your application you are likely to encounter the following changes to `dag-pb` nodes (the default node type that IPFS creates):
+
+* `DAGNode` properties have been renamed as follows:
+    * `data` => `Data`
+    * `links` => `Links`
+    * `size` => `size` (Note: no change)
+* `DAGLink` properties have been renamed as follows:
+    * `cid` => `Hash`
+    * `name` => `Name`
+    * `size` => `Tsize`
+
+See CHANGELOGs for each IPLD format for it's respective changes, you can read more about the [`dag-pb` changes in the CHANGELOG](https://github.com/ipld/js-ipld-dag-pb/blob/master)
+
+License: MIT
+Signed-off-by: Alan Shaw <alan.shaw@protocol.ai>
+
+
+
+<a name="0.36.0-pre.0"></a>
+# [0.36.0-pre.0](https://github.com/ipfs/js-ipfs/compare/v0.35.0...v0.36.0-pre.0) (2019-05-17)
+
+
+### Bug Fixes
+
+* **package:** update ipfs-http-client to version 31.0.0 ([#2052](https://github.com/ipfs/js-ipfs/issues/2052)) ([906f8d0](https://github.com/ipfs/js-ipfs/commit/906f8d0))
+* correctly validate ipld config ([#2033](https://github.com/ipfs/js-ipfs/issues/2033)) ([eebc17a](https://github.com/ipfs/js-ipfs/commit/eebc17a))
+* **package:** update hapi-pino to version 6.0.0 ([#2043](https://github.com/ipfs/js-ipfs/issues/2043)) ([f4e3bd0](https://github.com/ipfs/js-ipfs/commit/f4e3bd0))
+
+
+### Features
+
+* add support for File DOM API to files-regular ([#2013](https://github.com/ipfs/js-ipfs/issues/2013)) ([0a08192](https://github.com/ipfs/js-ipfs/commit/0a08192))
+* implement ipfs refs and refs local ([#2004](https://github.com/ipfs/js-ipfs/issues/2004)) ([6dc9075](https://github.com/ipfs/js-ipfs/commit/6dc9075))
+* **gateway:** add streaming, conditional and range requests ([#1989](https://github.com/ipfs/js-ipfs/issues/1989)) ([48a8e75](https://github.com/ipfs/js-ipfs/commit/48a8e75))
+
+
+
+<a name="0.35.0"></a>
+# [0.35.0](https://github.com/ipfs/js-ipfs/compare/v0.35.0-rc.7...v0.35.0) (2019-04-12)
+
+
+
+<a name="0.35.0-rc.7"></a>
+# [0.35.0-rc.7](https://github.com/ipfs/js-ipfs/compare/v0.35.0-rc.6...v0.35.0-rc.7) (2019-04-12)
+
+
+### Bug Fixes
+
+* flakey windows test ([#1987](https://github.com/ipfs/js-ipfs/issues/1987)) ([9708c0a](https://github.com/ipfs/js-ipfs/commit/9708c0a))
+* really disable DHT ([#1991](https://github.com/ipfs/js-ipfs/issues/1991)) ([2470be8](https://github.com/ipfs/js-ipfs/commit/2470be8))
+* remove non default ipld formats in the browser ([#1980](https://github.com/ipfs/js-ipfs/issues/1980)) ([4376121](https://github.com/ipfs/js-ipfs/commit/4376121))
+
+
+### BREAKING CHANGES
+
+* Browser application bundles now include only `ipld-dag-pb`, `ipld-dag-cbor` and `ipld-raw` IPLD codecs. Other codecs should be added manually, see https://github.com/ipfs/js-ipfs/blob/master/README.md#optionsipld for details.
+
+* In Node.js `require('ipfs')`
+    * all IPLD formats included
+* In browser application bundle `require('ipfs')` bundled with webpack/browserify/etc.
+    * only `ipld-dag-pb`, `ipld-dag-cbor` and `ipld-raw` included
+* CDN bundle `<script src="https://unpkg.com/ipfs/dist/index.min.js"></script>`
+    * all IPLD formats included
+
+Co-Authored-By: hugomrdias <mail@hugodias.me>
+
+
+
+<a name="0.35.0-rc.6"></a>
+# [0.35.0-rc.6](https://github.com/ipfs/js-ipfs/compare/v0.35.0-rc.5...v0.35.0-rc.6) (2019-04-11)
+
+
+### Bug Fixes
+
+* avoid logging http errors when its logger is not on ([#1977](https://github.com/ipfs/js-ipfs/issues/1977)) ([20beea2](https://github.com/ipfs/js-ipfs/commit/20beea2))
+
+
+### Features
+
+* recursive dnslink lookups ([#1935](https://github.com/ipfs/js-ipfs/issues/1935)) ([d5a1b89](https://github.com/ipfs/js-ipfs/commit/d5a1b89))
+* use libp2p auto dial ([#1983](https://github.com/ipfs/js-ipfs/issues/1983)) ([7f1fb26](https://github.com/ipfs/js-ipfs/commit/7f1fb26))
+
+
+
+<a name="0.35.0-rc.5"></a>
+# [0.35.0-rc.5](https://github.com/ipfs/js-ipfs/compare/v0.35.0-rc.4...v0.35.0-rc.5) (2019-04-04)
+
+
+### Bug Fixes
+
+* force browserify to load Buffer module ([#1969](https://github.com/ipfs/js-ipfs/issues/1969)) ([3654e50](https://github.com/ipfs/js-ipfs/commit/3654e50))
+* stop IPNS republisher ASAP ([#1976](https://github.com/ipfs/js-ipfs/issues/1976)) ([68561c8](https://github.com/ipfs/js-ipfs/commit/68561c8))
+* update link for multihashes ([#1975](https://github.com/ipfs/js-ipfs/issues/1975)) ([4a01bf6](https://github.com/ipfs/js-ipfs/commit/4a01bf6))
+
+
+### Features
+
+* expose multihashing-async along with other deps ([#1974](https://github.com/ipfs/js-ipfs/issues/1974)) ([6667966](https://github.com/ipfs/js-ipfs/commit/6667966)), closes [#1973](https://github.com/ipfs/js-ipfs/issues/1973)
+
+
+
+<a name="0.35.0-rc.4"></a>
+# [0.35.0-rc.4](https://github.com/ipfs/js-ipfs/compare/v0.35.0-rc.3...v0.35.0-rc.4) (2019-03-28)
+
+
+### Bug Fixes
+
+* CLI parsing of --silent arg ([#1955](https://github.com/ipfs/js-ipfs/issues/1955)) ([1c07779](https://github.com/ipfs/js-ipfs/commit/1c07779)), closes [#1947](https://github.com/ipfs/js-ipfs/issues/1947)
+
+
+### Code Refactoring
+
+* swap joi-browser with superstruct ([#1961](https://github.com/ipfs/js-ipfs/issues/1961)) ([8fb5825](https://github.com/ipfs/js-ipfs/commit/8fb5825))
+
+
+### Performance Improvements
+
+* reduce bundle size ([#1959](https://github.com/ipfs/js-ipfs/issues/1959)) ([a3b6235](https://github.com/ipfs/js-ipfs/commit/a3b6235))
+
+
+### BREAKING CHANGES
+
+* Constructor config validation is now a bit more strict - it does not allow `null` values or unknown properties.
+
+
+
+<a name="0.35.0-rc.3"></a>
+# [0.35.0-rc.3](https://github.com/ipfs/js-ipfs/compare/v0.35.0-rc.2...v0.35.0-rc.3) (2019-03-21)
+
+
+### Bug Fixes
+
+* name resolve arg parsing ([#1958](https://github.com/ipfs/js-ipfs/issues/1958)) ([924690e](https://github.com/ipfs/js-ipfs/commit/924690e))
+
+
+
+<a name="0.35.0-rc.2"></a>
+# [0.35.0-rc.2](https://github.com/ipfs/js-ipfs/compare/v0.35.0-rc.1...v0.35.0-rc.2) (2019-03-21)
+
+
+
+<a name="0.35.0-rc.1"></a>
+# [0.35.0-rc.1](https://github.com/ipfs/js-ipfs/compare/v0.35.0-rc.0...v0.35.0-rc.1) (2019-03-20)
+
+
+### Bug Fixes
+
+* cat deeply nested file ([#1920](https://github.com/ipfs/js-ipfs/issues/1920)) ([dcb453a](https://github.com/ipfs/js-ipfs/commit/dcb453a))
+* handle subdomains for ipfs.dns ([#1933](https://github.com/ipfs/js-ipfs/issues/1933)) ([29072a5](https://github.com/ipfs/js-ipfs/commit/29072a5))
+* only dial to unconnected peers ([#1914](https://github.com/ipfs/js-ipfs/issues/1914)) ([1478652](https://github.com/ipfs/js-ipfs/commit/1478652))
+
+
+### Features
+
+* add HTTP DAG API ([#1930](https://github.com/ipfs/js-ipfs/issues/1930)) ([a033e8b](https://github.com/ipfs/js-ipfs/commit/a033e8b))
+* display version info when starting daemon ([#1915](https://github.com/ipfs/js-ipfs/issues/1915)) ([6b789ee](https://github.com/ipfs/js-ipfs/commit/6b789ee))
+* provide access to multicodec ([#1921](https://github.com/ipfs/js-ipfs/issues/1921)) ([ceec0bc](https://github.com/ipfs/js-ipfs/commit/ceec0bc)), closes [#1913](https://github.com/ipfs/js-ipfs/issues/1913)
+* **issue-1852:** support multiple API and Gateway addresses ([#1903](https://github.com/ipfs/js-ipfs/issues/1903)) ([4ad104d](https://github.com/ipfs/js-ipfs/commit/4ad104d)), closes [#1852](https://github.com/ipfs/js-ipfs/issues/1852)
+
+
+### Performance Improvements
+
+* lower connection manager limits ([#1926](https://github.com/ipfs/js-ipfs/issues/1926)) ([7926349](https://github.com/ipfs/js-ipfs/commit/7926349))
+
+
+
+<a name="0.35.0-rc.0"></a>
+# [0.35.0-rc.0](https://github.com/ipfs/js-ipfs/compare/v0.35.0-pre.0...v0.35.0-rc.0) (2019-03-06)
+
+
+### Bug Fixes
+
+* add support for resolving to the middle of an IPLD block ([#1841](https://github.com/ipfs/js-ipfs/issues/1841)) ([fc08243](https://github.com/ipfs/js-ipfs/commit/fc08243))
+* dht browser disabled ([#1879](https://github.com/ipfs/js-ipfs/issues/1879)) ([7c5a843](https://github.com/ipfs/js-ipfs/commit/7c5a843))
+* ipv6 multiaddr in stdout ([#1854](https://github.com/ipfs/js-ipfs/issues/1854)) ([35fd541](https://github.com/ipfs/js-ipfs/commit/35fd541)), closes [#1853](https://github.com/ipfs/js-ipfs/issues/1853)
+* make clear pins function in tests serial ([#1910](https://github.com/ipfs/js-ipfs/issues/1910)) ([503e5ac](https://github.com/ipfs/js-ipfs/commit/503e5ac)), closes [#1890](https://github.com/ipfs/js-ipfs/issues/1890)
+* pin.rm test EPERM rename ([#1889](https://github.com/ipfs/js-ipfs/issues/1889)) ([c60de74](https://github.com/ipfs/js-ipfs/commit/c60de74))
+* temporarily disable random walk dht discovery ([#1907](https://github.com/ipfs/js-ipfs/issues/1907)) ([3fff46a](https://github.com/ipfs/js-ipfs/commit/3fff46a))
+
+
+### Code Refactoring
+
+* export types and utilities statically ([#1908](https://github.com/ipfs/js-ipfs/issues/1908)) ([79d7fef](https://github.com/ipfs/js-ipfs/commit/79d7fef))
+
+
+### Features
+
+* add `--enable-preload` to enable/disable preloading for daemons ([#1909](https://github.com/ipfs/js-ipfs/issues/1909)) ([9470900](https://github.com/ipfs/js-ipfs/commit/9470900))
+* limit connections number ([#1872](https://github.com/ipfs/js-ipfs/issues/1872)) ([bebce7f](https://github.com/ipfs/js-ipfs/commit/bebce7f))
+
+
+### BREAKING CHANGES
+
+* `ipfs.util.isIPFS` and `ipfs.util.crypto` have moved to static exports and should be accessed via `const { isIPFS, crypto } = require('ipfs')`.
+
+The modules available under `ipfs.types.*` have also become static exports.
+
+License: MIT
+Signed-off-by: Alan Shaw <alan.shaw@protocol.ai>
+* `ipfs.resolve` now supports resolving to the middle of an IPLD block instead of erroring.
+
+Given:
+
+```js
+b = {"c": "some value"}
+a = {"b": {"/": cidOf(b) }}
+```
+
+`ipfs resolve /ipld/cidOf(a)/b/c` should return `/ipld/cidOf(b)/c`. That is, it resolves the path as much as it can.
+
+Previously it would simply fail with an error.
+
+License: MIT
+Signed-off-by: Alan Shaw <alan.shaw@protocol.ai>
+
+
+
+<a name="0.35.0-pre.0"></a>
+# [0.35.0-pre.0](https://github.com/ipfs/js-ipfs/compare/v0.34.4...v0.35.0-pre.0) (2019-02-11)
+
+
+### Bug Fixes
+
+* add missing libp2p-websocket-star dep ([#1869](https://github.com/ipfs/js-ipfs/issues/1869)) ([7cba3dd](https://github.com/ipfs/js-ipfs/commit/7cba3dd))
+* path to cid-tool commands ([#1866](https://github.com/ipfs/js-ipfs/issues/1866)) ([506f5be](https://github.com/ipfs/js-ipfs/commit/506f5be))
+* swallowed errors ([#1860](https://github.com/ipfs/js-ipfs/issues/1860)) ([47e2b9e](https://github.com/ipfs/js-ipfs/commit/47e2b9e)), closes [#1835](https://github.com/ipfs/js-ipfs/issues/1835) [#1858](https://github.com/ipfs/js-ipfs/issues/1858)
+
+
+### Chores
+
+* rename local option to offline ([#1850](https://github.com/ipfs/js-ipfs/issues/1850)) ([bbe561b](https://github.com/ipfs/js-ipfs/commit/bbe561b))
+
+
+### Features
+
+* interoperable DHT ([#856](https://github.com/ipfs/js-ipfs/issues/856)) ([77a0957](https://github.com/ipfs/js-ipfs/commit/77a0957))
+
+
+### BREAKING CHANGES
+
+* `--local` option has been renamed to `--offline`
+
+
+
+<a name="0.34.4"></a>
+## [0.34.4](https://github.com/ipfs/js-ipfs/compare/v0.34.3...v0.34.4) (2019-01-24)
+
+
+### Features
+
+* support _dnslink subdomain specified dnslinks ([#1843](https://github.com/ipfs/js-ipfs/issues/1843)) ([a17253e](https://github.com/ipfs/js-ipfs/commit/a17253e))
+
+
+
+<a name="0.34.3"></a>
+## [0.34.3](https://github.com/ipfs/js-ipfs/compare/v0.34.2...v0.34.3) (2019-01-24)
+
+
+### Bug Fixes
+
+* add cors support for preload-mock-server and update aegir ([#1839](https://github.com/ipfs/js-ipfs/issues/1839)) ([2d45c9d](https://github.com/ipfs/js-ipfs/commit/2d45c9d))
+
+
+
+<a name="0.34.2"></a>
+## [0.34.2](https://github.com/ipfs/js-ipfs/compare/v0.34.1...v0.34.2) (2019-01-21)
+
+
+### Bug Fixes
+
+* race condition causing Database is not open error ([#1834](https://github.com/ipfs/js-ipfs/issues/1834)) ([6066c97](https://github.com/ipfs/js-ipfs/commit/6066c97))
+
+
+### Features
+
+* use ws-star-multi instead of ws-star ([#1793](https://github.com/ipfs/js-ipfs/issues/1793)) ([21fd4d1](https://github.com/ipfs/js-ipfs/commit/21fd4d1))
+
+
+
+<a name="0.34.1"></a>
+## [0.34.1](https://github.com/ipfs/js-ipfs/compare/v0.34.0...v0.34.1) (2019-01-21)
+
+
+### Features
+
+* pipe to add ([#1833](https://github.com/ipfs/js-ipfs/issues/1833)) ([ea53071](https://github.com/ipfs/js-ipfs/commit/ea53071))
+
+
+
+<a name="0.34.0"></a>
+# [0.34.0](https://github.com/ipfs/js-ipfs/compare/v0.34.0-rc.1...v0.34.0) (2019-01-17)
+
+
+
+<a name="0.34.0-rc.1"></a>
+# [0.34.0-rc.1](https://github.com/ipfs/js-ipfs/compare/v0.34.0-rc.0...v0.34.0-rc.1) (2019-01-15)
+
+
+### Bug Fixes
+
+* sharness tests ([#1787](https://github.com/ipfs/js-ipfs/issues/1787)) ([48d3e2b](https://github.com/ipfs/js-ipfs/commit/48d3e2b))
+
+
+### Code Refactoring
+
+* switch to bignumber.js ([#1803](https://github.com/ipfs/js-ipfs/issues/1803)) ([6de6adf](https://github.com/ipfs/js-ipfs/commit/6de6adf))
+
+
+### Features
+
+* update to Web UI v2.3.2 ([#1807](https://github.com/ipfs/js-ipfs/issues/1807)) ([8ca6471](https://github.com/ipfs/js-ipfs/commit/8ca6471))
+* update Web UI to v2.3.0 ([#1786](https://github.com/ipfs/js-ipfs/issues/1786)) ([7bcc496](https://github.com/ipfs/js-ipfs/commit/7bcc496))
+
+
+### BREAKING CHANGES
+
+* All API methods that returned [`big.js`](https://github.com/MikeMcl/big.js/) instances now return [`bignumber.js`](https://github.com/MikeMcl/bignumber.js/) instances.
+
+License: MIT
+Signed-off-by: Alan Shaw <alan.shaw@protocol.ai>
+
+
+
 <a name="0.34.0-rc.0"></a>
 # [0.34.0-rc.0](https://github.com/ipfs/js-ipfs/compare/v0.34.0-pre.0...v0.34.0-rc.0) (2018-12-18)
 

@@ -1,121 +1,124 @@
 'use strict'
 
-const promisify = require('promisify-es6')
-const get = require('lodash/get')
-const defaultsDeep = require('@nodeutils/defaults-deep')
+const get = require('dlv')
+const mergeOptions = require('merge-options')
 const ipnsUtils = require('../ipns/routing/utils')
+const multiaddr = require('multiaddr')
+const DelegatedPeerRouter = require('libp2p-delegated-peer-routing')
+const DelegatedContentRouter = require('libp2p-delegated-content-routing')
 
-module.exports = function libp2p (self) {
-  return {
-    start: promisify((callback) => {
-      self.config.get(gotConfig)
+module.exports = function libp2p (self, config) {
+  const options = self._options || {}
+  config = config || {}
 
-      function gotConfig (err, config) {
-        if (err) {
-          return callback(err)
-        }
+  // Always create libp2p via a bundle function
+  const createBundle = typeof options.libp2p === 'function'
+    ? options.libp2p
+    : defaultBundle
 
-        const defaultBundle = (opts) => {
-          const libp2pDefaults = {
-            datastore: opts.datastore,
-            peerInfo: opts.peerInfo,
-            peerBook: opts.peerBook,
-            config: {
-              peerDiscovery: {
-                mdns: {
-                  enabled: get(opts.options, 'config.Discovery.MDNS.Enabled',
-                    get(opts.config, 'Discovery.MDNS.Enabled', true))
-                },
-                webRTCStar: {
-                  enabled: get(opts.options, 'config.Discovery.webRTCStar.Enabled',
-                    get(opts.config, 'Discovery.webRTCStar.Enabled', true))
-                },
-                bootstrap: {
-                  list: get(opts.options, 'config.Bootstrap',
-                    get(opts.config, 'Bootstrap', []))
-                }
-              },
-              relay: {
-                enabled: get(opts.options, 'relay.enabled',
-                  get(opts.config, 'relay.enabled', false)),
-                hop: {
-                  enabled: get(opts.options, 'relay.hop.enabled',
-                    get(opts.config, 'relay.hop.enabled', false)),
-                  active: get(opts.options, 'relay.hop.active',
-                    get(opts.config, 'relay.hop.active', false))
-                }
-              },
-              dht: {
-                validators: {
-                  ipns: ipnsUtils.validator
-                },
-                selectors: {
-                  ipns: ipnsUtils.selector
-                }
-              },
-              EXPERIMENTAL: {
-                dht: get(opts.options, 'EXPERIMENTAL.dht', false),
-                pubsub: get(opts.options, 'EXPERIMENTAL.pubsub', false)
-              }
-            },
-            connectionManager: get(opts.options, 'connectionManager',
-              get(opts.config, 'connectionManager', {}))
-          }
+  const { datastore } = self._repo
+  const peerInfo = self._peerInfo
+  const peerBook = self._peerInfoBook
+  const libp2p = createBundle({ options, config, datastore, peerInfo, peerBook })
 
-          const libp2pOptions = defaultsDeep(
-            get(self._options, 'libp2p', {}),
-            libp2pDefaults
-          )
+  libp2p.on('stop', () => {
+    // Clear our addresses so we can start clean
+    peerInfo.multiaddrs.clear()
+  })
 
-          // Required inline to reduce startup time
-          // Note: libp2p-nodejs gets replaced by libp2p-browser when webpacked/browserified
-          const Node = require('../runtime/libp2p-nodejs')
-          return new Node(libp2pOptions)
-        }
-
-        // Always create libp2p via a bundle function
-        let libp2pBundle = get(self._options, 'libp2p', null)
-        if (typeof libp2pBundle !== 'function') {
-          libp2pBundle = defaultBundle
-        }
-
-        self._libp2pNode = libp2pBundle({
-          options: self._options,
-          config: config,
-          datastore: self._repo.datastore,
-          peerInfo: self._peerInfo,
-          peerBook: self._peerInfoBook
-        })
-
-        self._libp2pNode.on('peer:discovery', (peerInfo) => {
-          const dial = () => {
-            self._peerInfoBook.put(peerInfo)
-            self._libp2pNode.dial(peerInfo, () => {})
-          }
-          if (self.isOnline()) {
-            dial()
-          } else {
-            self._libp2pNode.once('start', dial)
-          }
-        })
-
-        self._libp2pNode.on('peer:connect', (peerInfo) => {
-          self._peerInfoBook.put(peerInfo)
-        })
-
-        self._libp2pNode.start((err) => {
-          if (err) { return callback(err) }
-
-          self._libp2pNode.peerInfo.multiaddrs.forEach((ma) => {
-            self._print('Swarm listening on', ma.toString())
-          })
-
-          callback()
-        })
-      }
-    }),
-    stop: promisify((callback) => {
-      self._libp2pNode.stop(callback)
+  libp2p.on('start', () => {
+    peerInfo.multiaddrs.forEach((ma) => {
+      self._print('Swarm listening on', ma.toString())
     })
+  })
+
+  libp2p.on('peer:connect', peerInfo => peerBook.put(peerInfo))
+
+  return libp2p
+}
+
+function defaultBundle ({ datastore, peerInfo, peerBook, options, config }) {
+  // Set up Delegate Routing based on the presence of Delegates in the config
+  let contentRouting
+  let peerRouting
+  const delegateHosts = get(options, 'config.Addresses.Delegates',
+    get(config, 'Addresses.Delegates', [])
+  )
+  if (delegateHosts.length > 0) {
+    // Pick a random delegate host
+    const delegateString = delegateHosts[Math.floor(Math.random() * delegateHosts.length)]
+    const delegateAddr = multiaddr(delegateString).toOptions()
+    const delegatedApiOptions = {
+      host: delegateAddr.host,
+      // port is a string atm, so we need to convert for the check
+      protocol: parseInt(delegateAddr.port) === 443 ? 'https' : 'http',
+      port: delegateAddr.port
+    }
+    contentRouting = [new DelegatedContentRouter(peerInfo.id, delegatedApiOptions)]
+    peerRouting = [new DelegatedPeerRouter(delegatedApiOptions)]
   }
+
+  const libp2pDefaults = {
+    datastore,
+    peerInfo,
+    peerBook,
+    modules: {
+      contentRouting,
+      peerRouting
+    },
+    config: {
+      peerDiscovery: {
+        mdns: {
+          enabled: get(options, 'config.Discovery.MDNS.Enabled',
+            get(config, 'Discovery.MDNS.Enabled', true))
+        },
+        webRTCStar: {
+          enabled: get(options, 'config.Discovery.webRTCStar.Enabled',
+            get(config, 'Discovery.webRTCStar.Enabled', true))
+        },
+        bootstrap: {
+          list: get(options, 'config.Bootstrap',
+            get(config, 'Bootstrap', []))
+        }
+      },
+      relay: {
+        enabled: get(options, 'relay.enabled',
+          get(config, 'relay.enabled', true)),
+        hop: {
+          enabled: get(options, 'relay.hop.enabled',
+            get(config, 'relay.hop.enabled', false)),
+          active: get(options, 'relay.hop.active',
+            get(config, 'relay.hop.active', false))
+        }
+      },
+      dht: {
+        kBucketSize: get(options, 'dht.kBucketSize', 20),
+        // enabled: !get(options, 'offline', false), // disable if offline, on by default
+        enabled: false,
+        randomWalk: {
+          enabled: false // disabled waiting for https://github.com/libp2p/js-libp2p-kad-dht/issues/86
+        },
+        validators: {
+          ipns: ipnsUtils.validator
+        },
+        selectors: {
+          ipns: ipnsUtils.selector
+        }
+      },
+      EXPERIMENTAL: {
+        pubsub: get(options, 'EXPERIMENTAL.pubsub', false)
+      }
+    },
+    connectionManager: get(options, 'connectionManager',
+      {
+        maxPeers: get(config, 'Swarm.ConnMgr.HighWater'),
+        minPeers: get(config, 'Swarm.ConnMgr.LowWater')
+      })
+  }
+
+  const libp2pOptions = mergeOptions(libp2pDefaults, get(options, 'libp2p', {}))
+  // Required inline to reduce startup time
+  // Note: libp2p-nodejs gets replaced by libp2p-browser when webpacked/browserified
+  const Node = require('../runtime/libp2p-nodejs')
+  return new Node(libp2pOptions)
 }

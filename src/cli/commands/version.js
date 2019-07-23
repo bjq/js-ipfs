@@ -1,7 +1,6 @@
 'use strict'
 
 const os = require('os')
-const print = require('../utils').print
 
 module.exports = {
   command: 'version',
@@ -33,10 +32,10 @@ module.exports = {
   },
 
   handler (argv) {
-    argv.ipfs.version((err, data) => {
-      if (err) {
-        throw err
-      }
+    argv.resolve((async () => {
+      const { print } = argv
+      const ipfs = await argv.getIpfs()
+      const data = await ipfs.version()
 
       const withCommit = argv.all || argv.commit
       const parsedVersion = `${data.version}${withCommit ? `-${data.commit}` : ''}`
@@ -54,6 +53,6 @@ module.exports = {
       } else {
         print(`js-ipfs version: ${parsedVersion}`)
       }
-    })
+    })())
   }
 }

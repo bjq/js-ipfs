@@ -1,7 +1,6 @@
 'use strict'
 
 const multibase = require('multibase')
-const { print } = require('../../../utils')
 const { cidToString } = require('../../../../utils/cid')
 
 module.exports = {
@@ -17,15 +16,14 @@ module.exports = {
     }
   },
 
-  handler ({ ipfs, root, link, cidBase }) {
-    ipfs.object.patch.rmLink(root, { name: link }, {
-      enc: 'base58'
-    }, (err, cid) => {
-      if (err) {
-        throw err
-      }
+  handler ({ getIpfs, print, root, link, cidBase, resolve }) {
+    resolve((async () => {
+      const ipfs = await getIpfs()
+      const cid = await ipfs.object.patch.rmLink(root, { name: link }, {
+        enc: 'base58'
+      })
 
       print(cidToString(cid, { base: cidBase, upgrade: false }))
-    })
+    })())
   }
 }

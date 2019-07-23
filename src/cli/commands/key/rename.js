@@ -1,7 +1,5 @@
 'use strict'
 
-const print = require('../../utils').print
-
 module.exports = {
   command: 'rename <name> <newName>',
 
@@ -10,11 +8,10 @@ module.exports = {
   builder: {},
 
   handler (argv) {
-    argv.ipfs.key.rename(argv.name, argv.newName, (err, res) => {
-      if (err) {
-        throw err
-      }
-      print(`renamed to ${res.id} ${res.now}`)
-    })
+    argv.resolve((async () => {
+      const ipfs = await argv.getIpfs()
+      const res = await ipfs.key.rename(argv.name, argv.newName)
+      argv.print(`renamed to ${res.id} ${res.now}`)
+    })())
   }
 }

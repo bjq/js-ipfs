@@ -3,19 +3,8 @@
 const bl = require('bl')
 const fs = require('fs')
 const multibase = require('multibase')
-const { print } = require('../../utils')
+const promisify = require('promisify-es6')
 const { cidToString } = require('../../../utils/cid')
-
-function addBlock (data, opts) {
-  const ipfs = opts.ipfs
-
-  ipfs.block.put(data, opts, (err, block) => {
-    if (err) {
-      throw err
-    }
-    print(cidToString(block.cid, { base: opts.cidBase }))
-  })
-}
 
 module.exports = {
   command: 'put [block]',
@@ -48,17 +37,23 @@ module.exports = {
   },
 
   handler (argv) {
-    if (argv.block) {
-      const buf = fs.readFileSync(argv.block)
-      return addBlock(buf, argv)
-    }
+    argv.resolve((async () => {
+      let data
 
-    process.stdin.pipe(bl((err, input) => {
-      if (err) {
-        throw err
+      if (argv.block) {
+        data = await promisify(fs.readFile)(argv.block)
+      } else {
+        data = await new Promise((resolve, reject) => {
+          process.stdin.pipe(bl((err, input) => {
+            if (err) return reject(err)
+            resolve(input)
+          }))
+        })
       }
 
-      addBlock(input, argv)
-    }))
+      const ipfs = await argv.getIpfs()
+      const { cid } = await ipfs.block.put(data, argv)
+      argv.print(cidToString(cid, { base: argv.cidBase }))
+    })())
   }
 }

@@ -1,7 +1,5 @@
 'use strict'
 
-const print = require('../../utils').print
-
 module.exports = {
   command: 'stat <key>',
 
@@ -9,17 +7,12 @@ module.exports = {
 
   builder: {},
 
-  handler ({ ipfs, key, cidBase }) {
-    ipfs.object.stat(key, { enc: 'base58' }, (err, stats) => {
-      if (err) {
-        throw err
-      }
-
+  handler ({ getIpfs, print, key, cidBase, resolve }) {
+    resolve((async () => {
+      const ipfs = await getIpfs()
+      const stats = await ipfs.object.stat(key, { enc: 'base58' })
       delete stats.Hash // only for js-ipfs-http-client output
-
-      Object.keys(stats).forEach((key) => {
-        print(`${key}: ${stats[key]}`)
-      })
-    })
+      Object.keys(stats).forEach((key) => print(`${key}: ${stats[key]}`))
+    })())
   }
 }

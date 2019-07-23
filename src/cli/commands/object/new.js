@@ -1,7 +1,6 @@
 'use strict'
 
 const multibase = require('multibase')
-const { print } = require('../../utils')
 const { cidToString } = require('../../../utils/cid')
 
 module.exports = {
@@ -17,13 +16,11 @@ module.exports = {
     }
   },
 
-  handler ({ ipfs, template, cidBase }) {
-    ipfs.object.new(template, (err, cid) => {
-      if (err) {
-        throw err
-      }
-
+  handler ({ getIpfs, print, template, cidBase, resolve }) {
+    resolve((async () => {
+      const ipfs = await getIpfs()
+      const cid = await ipfs.object.new(template)
       print(cidToString(cid, { base: cidBase, upgrade: false }))
-    })
+    })())
   }
 }

@@ -9,13 +9,14 @@ const expect = chai.expect
 chai.use(dirtyChai)
 const sinon = require('sinon')
 
-const fs = require('fs')
 const parallel = require('async/parallel')
 const series = require('async/series')
 
-const isNode = require('detect-node')
 const IPFS = require('../../src')
 const ipnsPath = require('../../src/core/ipns/path')
+const ipnsRouting = require('../../src/core/ipns/routing/config')
+const OfflineDatastore = require('../../src/core/ipns/routing/offline-datastore')
+const PubsubDatastore = require('../../src/core/ipns/routing/pubsub-datastore')
 const { Key } = require('interface-datastore')
 
 const DaemonFactory = require('ipfsd-ctl')
@@ -31,120 +32,13 @@ const publishAndResolve = (publisher, resolver, ipfsRef, publishOpts, nodeId, re
     expect(err).to.not.exist()
     expect(res[0]).to.exist()
     expect(res[1]).to.exist()
-    expect(res[1].path).to.equal(ipfsRef)
+    expect(res[1]).to.equal(ipfsRef)
     callback()
   })
 }
 
 describe('name', function () {
-  if (!isNode) {
-    return
-  }
-
-  describe('working locally', function () {
-    let node
-    let nodeId
-    let ipfsd
-
-    before(function (done) {
-      this.timeout(50 * 1000)
-      df.spawn({
-        exec: IPFS,
-        args: [`--pass ${hat()}`],
-        config: { Bootstrap: [] }
-      }, (err, _ipfsd) => {
-        expect(err).to.not.exist()
-        ipfsd = _ipfsd
-        node = _ipfsd.api
-
-        node.id().then((res) => {
-          expect(res.id).to.exist()
-
-          nodeId = res.id
-          done()
-        })
-      })
-    })
-
-    after((done) => ipfsd.stop(done))
-
-    it('should publish and then resolve correctly with the default options', function (done) {
-      this.timeout(50 * 1000)
-
-      publishAndResolve(node, node, ipfsRef, { resolve: false }, nodeId, {}, done)
-    })
-
-    it('should publish correctly with the lifetime option and resolve', function (done) {
-      this.timeout(50 * 1000)
-
-      const publishOpts = {
-        resolve: false,
-        lifetime: '2h'
-      }
-
-      publishAndResolve(node, node, ipfsRef, publishOpts, nodeId, {}, done)
-    })
-
-    it('should not get the entry correctly if its validity time expired', function (done) {
-      this.timeout(50 * 1000)
-
-      node.name.publish(ipfsRef, { resolve: false, lifetime: '1ms' }, (err, res) => {
-        expect(err).to.not.exist()
-        expect(res).to.exist()
-
-        setTimeout(function () {
-          node.name.resolve(nodeId, (err) => {
-            expect(err).to.exist()
-            done()
-          })
-        }, 2)
-      })
-    })
-
-    it('should recursively resolve to an IPFS hash', function (done) {
-      this.timeout(90 * 1000)
-      const keyName = hat()
-
-      node.key.gen(keyName, { type: 'rsa', size: 2048 }, function (err, key) {
-        expect(err).to.not.exist()
-        series([
-          (cb) => node.name.publish(ipfsRef, { resolve: false }, cb),
-          (cb) => node.name.publish(`/ipns/${nodeId}`, { resolve: false, key: keyName }, cb),
-          (cb) => node.name.resolve(key.id, { recursive: true }, cb)
-        ], (err, res) => {
-          expect(err).to.not.exist()
-          expect(res[2]).to.exist()
-          expect(res[2].path).to.equal(ipfsRef)
-          done()
-        })
-      })
-    })
-
-    it('should not recursively resolve to an IPFS hash if the option recursive is not provided', function (done) {
-      this.timeout(90 * 1000)
-      const keyName = hat()
-
-      node.key.gen(keyName, { type: 'rsa', size: 2048 }, function (err, key) {
-        expect(err).to.not.exist()
-        series([
-          (cb) => node.name.publish(ipfsRef, { resolve: false }, cb),
-          (cb) => node.name.publish(`/ipns/${nodeId}`, { resolve: false, key: keyName }, cb),
-          (cb) => node.name.resolve(key.id, cb)
-        ], (err, res) => {
-          expect(err).to.not.exist()
-          expect(res[2]).to.exist()
-          expect(res[2].path).to.equal(`/ipns/${nodeId}`)
-          done()
-        })
-      })
-    })
-  })
-
   describe('republisher', function () {
-    if (!isNode) {
-      return
-    }
-
     let node
     let ipfsd
 
@@ -152,8 +46,9 @@ describe('name', function () {
       this.timeout(40 * 1000)
       df.spawn({
         exec: IPFS,
-        args: [`--pass ${hat()}`],
-        config: { Bootstrap: [] }
+        args: [`--pass ${hat()}`, '--offline'],
+        config: { Bootstrap: [] },
+        preload: { enabled: false }
       }, (err, _ipfsd) => {
         expect(err).to.not.exist()
         ipfsd = _ipfsd
@@ -193,7 +88,7 @@ describe('name', function () {
     })
   })
 
-  // TODO: unskip when https://github.com/ipfs/js-ipfs/pull/856 is merged
+  // TODO: unskip when DHT is enabled in 0.36
   describe.skip('work with dht', () => {
     let nodes
     let nodeA
@@ -204,8 +99,18 @@ describe('name', function () {
     const createNode = (callback) => {
       df.spawn({
         exec: IPFS,
-        args: [`--pass ${hat()}`, '--enable-dht-experiment'],
-        config: { Bootstrap: [] }
+        args: [`--pass ${hat()}`],
+        config: {
+          Bootstrap: [],
+          Discovery: {
+            MDNS: {
+              Enabled: false
+            },
+            webRTCStar: {
+              Enabled: false
+            }
+          }
+        }
       }, callback)
     }
 
@@ -233,7 +138,8 @@ describe('name', function () {
           idA = ids[0]
           parallel([
             (cb) => nodeC.swarm.connect(ids[0].addresses[0], cb), // C => A
-            (cb) => nodeC.swarm.connect(ids[1].addresses[0], cb) // C => B
+            (cb) => nodeC.swarm.connect(ids[1].addresses[0], cb), // C => B
+            (cb) => nodeA.swarm.connect(ids[1].addresses[0], cb) // A => B
           ], done)
         })
       })
@@ -246,12 +152,12 @@ describe('name', function () {
     })
 
     it('should publish and then resolve correctly with the default options', function (done) {
-      this.timeout(90 * 1000)
+      this.timeout(380 * 1000)
       publishAndResolve(nodeA, nodeB, ipfsRef, { resolve: false }, idA.id, {}, done)
     })
 
     it('should recursively resolve to an IPFS hash', function (done) {
-      this.timeout(180 * 1000)
+      this.timeout(360 * 1000)
       const keyName = hat()
 
       nodeA.key.gen(keyName, { type: 'rsa', size: 2048 }, function (err, key) {
@@ -263,7 +169,7 @@ describe('name', function () {
         ], (err, res) => {
           expect(err).to.not.exist()
           expect(res[2]).to.exist()
-          expect(res[2].path).to.equal(ipfsRef)
+          expect(res[2]).to.equal(ipfsRef)
           done()
         })
       })
@@ -271,10 +177,6 @@ describe('name', function () {
   })
 
   describe('errors', function () {
-    if (!isNode) {
-      return
-    }
-
     let node
     let nodeId
     let ipfsd
@@ -284,7 +186,18 @@ describe('name', function () {
       df.spawn({
         exec: IPFS,
         args: [`--pass ${hat()}`],
-        config: { Bootstrap: [] }
+        config: {
+          Bootstrap: [],
+          Discovery: {
+            MDNS: {
+              Enabled: false
+            },
+            webRTCStar: {
+              Enabled: false
+            }
+          }
+        },
+        preload: { enabled: false }
       }, (err, _ipfsd) => {
         expect(err).to.not.exist()
         ipfsd = _ipfsd
@@ -436,26 +349,32 @@ describe('name', function () {
   })
 
   describe('ipns.path', function () {
-    const path = 'test/fixtures/planets/solar-system.md'
     const fixture = {
-      path,
-      content: fs.readFileSync(path)
+      path: 'test/fixtures/planets/solar-system.md',
+      content: Buffer.from('ipns.path')
     }
 
     let node
     let ipfsd
     let nodeId
 
-    if (!isNode) {
-      return
-    }
-
     before(function (done) {
       this.timeout(40 * 1000)
       df.spawn({
         exec: IPFS,
-        args: [`--pass ${hat()}`],
-        config: { Bootstrap: [] }
+        args: [`--pass ${hat()}`, '--offline'],
+        config: {
+          Bootstrap: [],
+          Discovery: {
+            MDNS: {
+              Enabled: false
+            },
+            webRTCStar: {
+              Enabled: false
+            }
+          }
+        },
+        preload: { enabled: false }
       }, (err, _ipfsd) => {
         expect(err).to.not.exist()
         node = _ipfsd.api
@@ -500,6 +419,90 @@ describe('name', function () {
           })
         })
       })
+    })
+  })
+
+  describe('ipns.routing', function () {
+    it('should use only the offline datastore by default', function (done) {
+      const ipfs = {}
+      const config = ipnsRouting(ipfs)
+
+      expect(config.stores).to.have.lengthOf(1)
+      expect(config.stores[0] instanceof OfflineDatastore).to.eql(true)
+
+      done()
+    })
+
+    it('should use only the offline datastore if offline', function (done) {
+      const ipfs = {
+        _options: {
+          offline: true
+        }
+      }
+      const config = ipnsRouting(ipfs)
+
+      expect(config.stores).to.have.lengthOf(1)
+      expect(config.stores[0] instanceof OfflineDatastore).to.eql(true)
+
+      done()
+    })
+
+    it('should use the pubsub datastore if enabled', function (done) {
+      const ipfs = {
+        libp2p: {
+          pubsub: {}
+        },
+        _peerInfo: {
+          id: {}
+        },
+        _repo: {
+          datastore: {}
+        },
+        _options: {
+          EXPERIMENTAL: {
+            ipnsPubsub: true
+          }
+        }
+      }
+      const config = ipnsRouting(ipfs)
+
+      expect(config.stores).to.have.lengthOf(2)
+      expect(config.stores[0] instanceof PubsubDatastore).to.eql(true)
+      expect(config.stores[1] instanceof OfflineDatastore).to.eql(true)
+
+      done()
+    })
+
+    it('should use the dht if enabled', function (done) {
+      const dht = {}
+
+      const ipfs = {
+        libp2p: {
+          dht
+        },
+        _peerInfo: {
+          id: {}
+        },
+        _repo: {
+          datastore: {}
+        },
+        _options: {
+          libp2p: {
+            config: {
+              dht: {
+                enabled: true
+              }
+            }
+          }
+        }
+      }
+
+      const config = ipnsRouting(ipfs)
+
+      expect(config.stores).to.have.lengthOf(1)
+      expect(config.stores[0]).to.eql(dht)
+
+      done()
     })
   })
 })

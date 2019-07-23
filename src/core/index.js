@@ -10,9 +10,11 @@ const multiaddr = require('multiaddr')
 const multihash = require('multihashes')
 const PeerBook = require('peer-book')
 const multibase = require('multibase')
+const multicodec = require('multicodec')
+const multihashing = require('multihashing-async')
 const CID = require('cids')
 const debug = require('debug')
-const defaultsDeep = require('@nodeutils/defaults-deep')
+const mergeOptions = require('merge-options')
 const EventEmitter = require('events')
 
 const config = require('./config')
@@ -23,41 +25,17 @@ const components = require('./components')
 const defaultRepo = require('./runtime/repo-nodejs')
 const preload = require('./preload')
 const mfsPreload = require('./mfs-preload')
+const ipldOptions = require('./runtime/ipld-nodejs')
+/**
+ * @typedef { import("./ipns/index") } IPNS
+ */
 
-// All known (non-default) IPLD formats
-const IpldFormats = {
-  get 'bitcoin-block' () {
-    return require('ipld-bitcoin')
-  },
-  get 'eth-account-snapshot' () {
-    return require('ipld-ethereum').ethAccountSnapshot
-  },
-  get 'eth-block' () {
-    return require('ipld-ethereum').ethBlock
-  },
-  get 'eth-block-list' () {
-    return require('ipld-ethereum').ethBlockList
-  },
-  get 'eth-state-trie' () {
-    return require('ipld-ethereum').ethStateTrie
-  },
-  get 'eth-storage-trie' () {
-    return require('ipld-ethereum').ethStorageTrie
-  },
-  get 'eth-tx' () {
-    return require('ipld-ethereum').ethTx
-  },
-  get 'eth-tx-trie' () {
-    return require('ipld-ethereum').ethTxTrie
-  },
-  get 'git-raw' () {
-    return require('ipld-git')
-  },
-  get 'zcash-block' () {
-    return require('ipld-zcash')
-  }
-}
-
+/**
+ *
+ *
+ * @class IPFS
+ * @extends {EventEmitter}
+ */
 class IPFS extends EventEmitter {
   constructor (options) {
     super()
@@ -77,7 +55,7 @@ class IPFS extends EventEmitter {
 
     options = config.validate(options || {})
 
-    this._options = defaultsDeep(options, defaults)
+    this._options = mergeOptions(defaults, options)
 
     if (options.init === false) {
       this._options.init = false
@@ -95,37 +73,19 @@ class IPFS extends EventEmitter {
     }
 
     // IPFS utils
-    this.log = debug('jsipfs')
-    this.log.err = debug('jsipfs:err')
-
-    // IPFS types
-    this.types = {
-      Buffer: Buffer,
-      PeerId: PeerId,
-      PeerInfo: PeerInfo,
-      multiaddr: multiaddr,
-      multibase: multibase,
-      multihash: multihash,
-      CID: CID
-    }
+    this.log = debug('ipfs')
+    this.log.err = debug('ipfs:err')
 
     // IPFS Core Internals
     // this._repo - assigned above
     this._peerInfoBook = new PeerBook()
     this._peerInfo = undefined
-    this._libp2pNode = undefined
     this._bitswap = undefined
     this._blockService = new BlockService(this._repo)
-    this._ipld = new Ipld({
-      blockService: this._blockService,
-      loadFormat: (codec, callback) => {
-        this.log('Loading IPLD format', codec)
-        if (IpldFormats[codec]) return callback(null, IpldFormats[codec])
-        callback(new Error(`Missing IPLD format "${codec}"`))
-      }
-    })
+    this._ipld = new Ipld(ipldOptions(this._blockService, this._options.ipld, this.log))
     this._preload = preload(this)
     this._mfsPreload = mfsPreload(this)
+    /** @type {IPNS} */
     this._ipns = undefined
     // eslint-disable-next-line no-console
     this._print = this._options.silent ? this.log : console.log
@@ -149,7 +109,7 @@ class IPFS extends EventEmitter {
     this.object = components.object(this)
     this.dag = components.dag(this)
     this.files = components.filesMFS(this)
-    this.libp2p = components.libp2p(this)
+    this.libp2p = null // assigned on start
     this.swarm = components.swarm(this)
     this.name = components.name(this)
     this.bitswap = components.bitswap(this)
@@ -178,24 +138,44 @@ class IPFS extends EventEmitter {
     if (this._options.EXPERIMENTAL.sharding) {
       this.log('EXPERIMENTAL sharding is enabled')
     }
-    if (this._options.EXPERIMENTAL.dht) {
-      this.log('EXPERIMENTAL Kademlia DHT is enabled')
-    }
 
     this.state = require('./state')(this)
 
-    // ipfs.util
-    this.util = {
-      crypto,
-      isIPFS
+    const onReady = () => {
+      this.removeListener('error', onError)
+      this._ready = true
     }
+
+    const onError = err => {
+      this.removeListener('ready', onReady)
+      this._readyError = err
+    }
+
+    this.once('ready', onReady).once('error', onError)
 
     boot(this)
   }
+
+  get ready () {
+    return new Promise((resolve, reject) => {
+      if (this._ready) return resolve(this)
+      if (this._readyError) return reject(this._readyError)
+      this.once('ready', () => resolve(this))
+      this.once('error', reject)
+    })
+  }
 }
 
-exports = module.exports = IPFS
+module.exports = IPFS
 
-exports.createNode = (options) => {
+// Note: We need to do this to force browserify to load the Buffer module
+const BufferImpl = Buffer
+Object.assign(module.exports, { crypto, isIPFS, Buffer: BufferImpl, CID, multiaddr, multibase, multihash, multihashing, multicodec, PeerId, PeerInfo })
+
+module.exports.createNode = (options) => {
   return new IPFS(options)
+}
+
+module.exports.create = (options) => {
+  return new IPFS(options).ready
 }

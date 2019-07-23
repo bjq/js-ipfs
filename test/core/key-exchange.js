@@ -16,14 +16,15 @@ describe('key exchange', () => {
   let ipfs
   let repo
   let selfPem
-  let passwordPem = hat()
+  const passwordPem = hat()
 
   before(function (done) {
     this.timeout(20 * 1000)
     repo = createTempRepo()
     ipfs = new IPFS({
       repo: repo,
-      pass: hat()
+      pass: hat(),
+      preload: { enabled: false }
     })
     ipfs.on('ready', () => done())
   })

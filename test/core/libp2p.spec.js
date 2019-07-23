@@ -11,44 +11,42 @@ const MemoryStore = require('interface-datastore').MemoryDatastore
 const PeerInfo = require('peer-info')
 const PeerBook = require('peer-book')
 const WebSocketStar = require('libp2p-websocket-star')
-const Multiplex = require('libp2p-mplex')
+const Multiplex = require('pull-mplex')
 const SECIO = require('libp2p-secio')
+const KadDHT = require('libp2p-kad-dht')
 const Libp2p = require('libp2p')
 
 const libp2pComponent = require('../../src/core/components/libp2p')
 
 describe('libp2p customization', function () {
   // Provide some extra time for ci since we're starting libp2p nodes in each test
-  this.timeout(15 * 1000)
+  this.timeout(25 * 1000)
 
   let datastore
   let peerInfo
   let peerBook
-  let mockConfig
+  let testConfig
   let _libp2p
 
-  before((done) => {
-    mockConfig = {
-      get: (callback) => {
-        callback(null, {
-          Addresses: {
-            Swarm: ['/ip4/0.0.0.0/tcp/4002'],
-            API: '/ip4/127.0.0.1/tcp/5002',
-            Gateway: '/ip4/127.0.0.1/tcp/9090'
-          },
-          Discovery: {
-            MDNS: {
-              Enabled: false
-            },
-            webRTCStar: {
-              Enabled: false
-            }
-          },
-          EXPERIMENTAL: {
-            dht: false,
-            pubsub: false
-          }
-        })
+  before(function (done) {
+    this.timeout(25 * 1000)
+
+    testConfig = {
+      Addresses: {
+        Swarm: ['/ip4/0.0.0.0/tcp/4002'],
+        API: '/ip4/127.0.0.1/tcp/5002',
+        Gateway: '/ip4/127.0.0.1/tcp/9090'
+      },
+      Discovery: {
+        MDNS: {
+          Enabled: false
+        },
+        webRTCStar: {
+          Enabled: false
+        }
+      },
+      EXPERIMENTAL: {
+        pubsub: false
       }
     }
     datastore = new MemoryStore()
@@ -76,8 +74,8 @@ describe('libp2p customization', function () {
         },
         _peerInfo: peerInfo,
         _peerBook: peerBook,
+        // eslint-disable-next-line no-console
         _print: console.log,
-        config: mockConfig,
         _options: {
           libp2p: (opts) => {
             const wsstar = new WebSocketStar({ id: opts.peerInfo.id })
@@ -97,19 +95,22 @@ describe('libp2p customization', function () {
                 ],
                 peerDiscovery: [
                   wsstar.discovery
-                ]
+                ],
+                dht: KadDHT
               }
             })
           }
         }
       }
 
-      _libp2p = libp2pComponent(ipfs)
+      _libp2p = libp2pComponent(ipfs, testConfig)
 
       _libp2p.start((err) => {
         expect(err).to.not.exist()
-        expect(ipfs._libp2pNode._config).to.not.have.property('peerDiscovery')
-        expect(ipfs._libp2pNode._transport).to.have.length(1)
+        expect(_libp2p._config.peerDiscovery).to.eql({
+          autoDial: true
+        })
+        expect(_libp2p._transport).to.have.length(1)
         done()
       })
     })
@@ -123,16 +124,17 @@ describe('libp2p customization', function () {
         },
         _peerInfo: peerInfo,
         _peerBook: peerBook,
-        _print: console.log,
-        config: mockConfig
+        // eslint-disable-next-line no-console
+        _print: console.log
       }
 
-      _libp2p = libp2pComponent(ipfs)
+      _libp2p = libp2pComponent(ipfs, testConfig)
 
       _libp2p.start((err) => {
         expect(err).to.not.exist()
-        expect(ipfs._libp2pNode._config).to.deep.include({
+        expect(_libp2p._config).to.deep.include({
           peerDiscovery: {
+            autoDial: true,
             bootstrap: {
               enabled: true,
               list: []
@@ -148,11 +150,10 @@ describe('libp2p customization', function () {
             }
           },
           EXPERIMENTAL: {
-            dht: false,
             pubsub: false
           }
         })
-        expect(ipfs._libp2pNode._transport).to.have.length(3)
+        expect(_libp2p._transport).to.have.length(3)
         done()
       })
     })
@@ -166,8 +167,8 @@ describe('libp2p customization', function () {
         },
         _peerInfo: peerInfo,
         _peerBook: peerBook,
+        // eslint-disable-next-line no-console
         _print: console.log,
-        config: mockConfig,
         _options: {
           config: {
             Discovery: {
@@ -177,7 +178,6 @@ describe('libp2p customization', function () {
             }
           },
           EXPERIMENTAL: {
-            dht: false,
             pubsub: true
           },
           libp2p: {
@@ -193,12 +193,13 @@ describe('libp2p customization', function () {
         }
       }
 
-      _libp2p = libp2pComponent(ipfs)
+      _libp2p = libp2pComponent(ipfs, testConfig)
 
       _libp2p.start((err) => {
         expect(err).to.not.exist()
-        expect(ipfs._libp2pNode._config).to.deep.include({
+        expect(_libp2p._config).to.deep.include({
           peerDiscovery: {
+            autoDial: true,
             bootstrap: {
               enabled: true,
               list: []
@@ -214,11 +215,80 @@ describe('libp2p customization', function () {
             }
           },
           EXPERIMENTAL: {
-            dht: false,
             pubsub: true
           }
         })
-        expect(ipfs._libp2pNode._transport).to.have.length(1)
+        expect(_libp2p._transport).to.have.length(1)
+        done()
+      })
+    })
+
+    it('should NOT create delegate routers if they are not defined', (done) => {
+      const ipfs = {
+        _repo: {
+          datastore
+        },
+        _peerInfo: peerInfo,
+        _peerBook: peerBook,
+        // eslint-disable-next-line no-console
+        _print: console.log,
+        _options: {
+          config: {
+            Addresses: {
+              Delegates: []
+            }
+          }
+        }
+      }
+
+      _libp2p = libp2pComponent(ipfs, testConfig)
+
+      _libp2p.start((err) => {
+        expect(err).to.not.exist()
+
+        expect(_libp2p._modules.contentRouting).to.not.exist()
+        expect(_libp2p._modules.peerRouting).to.not.exist()
+        done()
+      })
+    })
+
+    it('should create delegate routers if they are defined', (done) => {
+      const ipfs = {
+        _repo: {
+          datastore
+        },
+        _peerInfo: peerInfo,
+        _peerBook: peerBook,
+        // eslint-disable-next-line no-console
+        _print: console.log,
+        _options: {
+          config: {
+            Addresses: {
+              Delegates: [
+                '/dns4/node0.preload.ipfs.io/tcp/443/https'
+              ]
+            }
+          }
+        }
+      }
+
+      _libp2p = libp2pComponent(ipfs, testConfig)
+
+      _libp2p.start((err) => {
+        expect(err).to.not.exist()
+
+        expect(_libp2p._modules.contentRouting).to.have.length(1)
+        expect(_libp2p._modules.contentRouting[0].api).to.include({
+          host: 'node0.preload.ipfs.io',
+          port: '443',
+          protocol: 'https'
+        })
+        expect(_libp2p._modules.peerRouting).to.have.length(1)
+        expect(_libp2p._modules.peerRouting[0].api).to.include({
+          host: 'node0.preload.ipfs.io',
+          port: '443',
+          protocol: 'https'
+        })
         done()
       })
     })

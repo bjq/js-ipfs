@@ -1,8 +1,5 @@
 'use strict'
 
-const utils = require('../../utils')
-const print = utils.print
-
 module.exports = {
   command: 'connect <address>',
 
@@ -11,16 +8,13 @@ module.exports = {
   builder: {},
 
   handler (argv) {
-    if (!utils.isDaemonOn()) {
-      throw new Error('This command must be run in online mode. Try running \'ipfs daemon\' first.')
-    }
-
-    argv.ipfs.swarm.connect(argv.address, (err, res) => {
-      if (err) {
-        throw err
+    argv.resolve((async () => {
+      if (!argv.isDaemonOn()) {
+        throw new Error('This command must be run in online mode. Try running \'ipfs daemon\' first.')
       }
-
-      print(res.Strings[0])
-    })
+      const ipfs = await argv.getIpfs()
+      const res = await ipfs.swarm.connect(argv.address)
+      argv.print(res.Strings[0])
+    })())
   }
 }

@@ -1,7 +1,5 @@
 'use strict'
 
-const print = require('../../utils').print
-
 module.exports = {
   command: 'list',
 
@@ -10,12 +8,10 @@ module.exports = {
   builder: {},
 
   handler (argv) {
-    argv.ipfs.bootstrap.list((err, list) => {
-      if (err) {
-        throw err
-      }
-
-      list.Peers.forEach((node) => print(node))
-    })
+    argv.resolve((async () => {
+      const ipfs = await argv.getIpfs()
+      const list = await ipfs.bootstrap.list()
+      list.Peers.forEach((node) => argv.print(node))
+    })())
   }
 }
